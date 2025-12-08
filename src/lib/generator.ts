@@ -34,6 +34,26 @@ export class SeededRNG {
   }
 
   /**
+   * Pick random element from weighted array
+   * Each item has a weight property - higher weight = more likely to be picked
+   */
+  pickWeighted<T extends { weight: number }>(items: T[]): T {
+    if (items.length === 0) throw new Error('Cannot pick from empty array')
+    
+    const totalWeight = items.reduce((sum, item) => sum + (item.weight || 1), 0)
+    if (totalWeight === 0) return items[0]
+    
+    let random = this.next() * totalWeight
+    
+    for (const item of items) {
+      random -= item.weight || 1
+      if (random <= 0) return item
+    }
+    
+    return items[items.length - 1]
+  }
+
+  /**
    * Shuffle array deterministically (Fisher-Yates)
    */
   shuffle<T>(array: T[]): T[] {
@@ -51,9 +71,15 @@ export interface Phonology {
   vowels: string[]
 }
 
+export interface SyllableTemplate {
+  template: string // e.g., 'CV', 'CVC', 'V'
+  weight: number   // higher = more frequent
+}
+
 export interface Phonotactics {
-  syllableTemplates: string[] // e.g., ['CV', 'CVC', 'V']
-  forbiddenSequences: string[] // e.g., ['kk', 'vv']
+  // Support both old format (string[]) and new format (SyllableTemplate[])
+  syllableTemplates: string[] | SyllableTemplate[]
+  forbiddenSequences: string[]
 }
 
 export interface Orthography {
@@ -64,6 +90,21 @@ export interface LanguageDefinition {
   phonology?: Phonology
   phonotactics?: Phonotactics
   orthography?: Orthography
+}
+
+/**
+ * Normalize syllable templates to weighted format
+ */
+function normalizeTemplates(templates: string[] | SyllableTemplate[]): SyllableTemplate[] {
+  if (templates.length === 0) return []
+  
+  // Check if already in weighted format
+  if (typeof templates[0] === 'object' && 'template' in templates[0]) {
+    return templates as SyllableTemplate[]
+  }
+  
+  // Convert string[] to SyllableTemplate[] with equal weights
+  return (templates as string[]).map(template => ({ template, weight: 1 }))
 }
 
 /**
@@ -82,9 +123,10 @@ function generateWord(
   phonotactics: Phonotactics
 ): string {
   const { consonants, vowels } = phonology
-  const { syllableTemplates, forbiddenSequences } = phonotactics
+  const templates = normalizeTemplates(phonotactics.syllableTemplates)
+  const { forbiddenSequences } = phonotactics
 
-  if (syllableTemplates.length === 0) {
+  if (templates.length === 0) {
     throw new Error('No syllable templates defined')
   }
 
@@ -96,13 +138,15 @@ function generateWord(
   const syllableCount = rng.nextInt(1, 4)
 
   for (let i = 0; i < syllableCount; i++) {
-    const template = rng.pick(syllableTemplates)
+    const templateObj = rng.pickWeighted(templates)
     let syllable = ''
 
-    for (const char of template) {
+    for (const char of templateObj.template) {
       if (char === 'C') {
+        if (consonants.length === 0) continue
         syllable += rng.pick(consonants)
       } else if (char === 'V') {
+        if (vowels.length === 0) continue
         syllable += rng.pick(vowels)
       } else {
         syllable += char
@@ -162,7 +206,7 @@ export function generateWords(
   }
 
   const phonotactics = definition.phonotactics || {
-    syllableTemplates: ['CV', 'CVC'],
+    syllableTemplates: [{ template: 'CV', weight: 2 }, { template: 'CVC', weight: 1 }],
     forbiddenSequences: [],
   }
 
@@ -174,4 +218,3 @@ export function generateWords(
 
   return words
 }
-

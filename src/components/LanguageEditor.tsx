@@ -9,6 +9,7 @@ import {
   saveLanguage,
   updateLanguage,
   deleteLanguage,
+  duplicateLanguage,
   createSlug,
   getLexiconEntries,
 } from '@/app/actions'
@@ -208,6 +209,23 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
   }
 
+  const handleDuplicate = async () => {
+    if (!currentLanguage?.id || !user) return
+
+    setSaving(true)
+    try {
+      const duplicated = await duplicateLanguage(currentLanguage.id)
+      if (duplicated) {
+        setLanguages(prev => [duplicated, ...prev])
+        setCurrentLanguage(duplicated)
+      }
+    } catch (error) {
+      console.error('Duplicate failed:', error)
+      alert('Failed to duplicate language')
+    }
+    setSaving(false)
+  }
+
   const handleExport = () => {
     if (!currentLanguage) return
 
@@ -352,6 +370,9 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             <>
               <Button onClick={handleTogglePublic} className="w-full" variant="outline">
                 {currentLanguage.is_public ? 'Make Private' : 'Make Public'}
+              </Button>
+              <Button onClick={handleDuplicate} disabled={saving} className="w-full" variant="outline">
+                {saving ? 'Duplicating...' : 'Duplicate'}
               </Button>
               <Button onClick={handleDelete} className="w-full" variant="destructive">
                 Delete

@@ -1,10 +1,13 @@
-import { Phonology, Phonotactics } from './generator'
+import { Phonology, SyllableTemplate } from './generator'
 
 export interface PhonologyPreset {
   name: string
   description: string
   phonology: Phonology
-  phonotactics: Phonotactics
+  phonotactics: {
+    syllableTemplates: SyllableTemplate[]
+    forbiddenSequences: string[]
+  }
 }
 
 export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
@@ -16,7 +19,11 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'e', 'i', 'o', 'u'],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'CVC', 'V'],
+      syllableTemplates: [
+        { template: 'CV', weight: 3 },
+        { template: 'CVC', weight: 2 },
+        { template: 'V', weight: 1 },
+      ],
       forbiddenSequences: [],
     },
   },
@@ -28,7 +35,12 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'e', 'i', 'o', 'u', 'ai', 'ei', 'ao'],
     },
     phonotactics: {
-      syllableTemplates: ['V', 'CV', 'CVV', 'VCV'],
+      syllableTemplates: [
+        { template: 'V', weight: 2 },
+        { template: 'CV', weight: 3 },
+        { template: 'CVV', weight: 2 },
+        { template: 'VCV', weight: 1 },
+      ],
       forbiddenSequences: ['ss', 'ff'],
     },
   },
@@ -40,7 +52,11 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'o', 'u', 'e'],
     },
     phonotactics: {
-      syllableTemplates: ['CVC', 'CVCC', 'CCVC'],
+      syllableTemplates: [
+        { template: 'CVC', weight: 3 },
+        { template: 'CVCC', weight: 2 },
+        { template: 'CCVC', weight: 2 },
+      ],
       forbiddenSequences: ['ii', 'ee'],
     },
   },
@@ -52,7 +68,12 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'i', 'u', 'aa', 'ii', 'uu'],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'CVC', 'VCV', 'CVCV'],
+      syllableTemplates: [
+        { template: 'CV', weight: 2 },
+        { template: 'CVC', weight: 2 },
+        { template: 'VCV', weight: 1 },
+        { template: 'CVCV', weight: 1 },
+      ],
       forbiddenSequences: ["''", 'khkh'],
     },
   },
@@ -64,7 +85,12 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'e', 'i', 'o', 'u', 'ae', 'ai', 'au'],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'CVC', 'V', 'VC'],
+      syllableTemplates: [
+        { template: 'CV', weight: 3 },
+        { template: 'CVC', weight: 2 },
+        { template: 'V', weight: 2 },
+        { template: 'VC', weight: 1 },
+      ],
       forbiddenSequences: ['ss', 'thth'],
     },
   },
@@ -76,7 +102,12 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'o', 'u', 'oo'],
     },
     phonotactics: {
-      syllableTemplates: ['CVC', 'CVCC', 'CCVC', 'CCV'],
+      syllableTemplates: [
+        { template: 'CVC', weight: 3 },
+        { template: 'CVCC', weight: 2 },
+        { template: 'CCVC', weight: 2 },
+        { template: 'CCV', weight: 1 },
+      ],
       forbiddenSequences: ['ee', 'ii'],
     },
   },
@@ -88,7 +119,10 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'i', 'u', 'e', 'o'],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'V'],
+      syllableTemplates: [
+        { template: 'CV', weight: 4 },
+        { template: 'V', weight: 1 },
+      ],
       forbiddenSequences: ['ti', 'tu', 'si', 'hu'],
     },
   },
@@ -100,7 +134,12 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
       vowels: ['a', 'i', 'u', 'aa', 'ii', 'uu'],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'CVC', 'CVVC', 'CVCC'],
+      syllableTemplates: [
+        { template: 'CV', weight: 2 },
+        { template: 'CVC', weight: 3 },
+        { template: 'CVVC', weight: 1 },
+        { template: 'CVCC', weight: 1 },
+      ],
       forbiddenSequences: [],
     },
   },
@@ -116,4 +155,3 @@ export const SYLLABLE_TEMPLATE_PRESETS = [
   { template: 'CVCC', description: 'Consonant + Vowel + cluster (kant, telp, most)' },
   { template: 'CCVC', description: 'Cluster + Vowel + Consonant (stan, kril, blan)' },
 ]
-
