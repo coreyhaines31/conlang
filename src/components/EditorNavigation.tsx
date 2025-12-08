@@ -3,18 +3,27 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Home,
+  Volume2,
+  BookOpen,
+  PenTool,
+  GitBranch,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
 
 interface NavItem {
   id: string
   label: string
-  icon?: string
 }
 
 interface NavCategory {
   id: string
   label: string
-  icon: string
+  icon: LucideIcon
   items: NavItem[]
   defaultOpen?: boolean
 }
@@ -23,14 +32,14 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'overview',
     label: 'Overview',
-    icon: '🏠',
+    icon: Home,
     items: [{ id: 'overview', label: 'Overview' }],
     defaultOpen: true,
   },
   {
     id: 'sounds',
     label: 'Sound System',
-    icon: '🔊',
+    icon: Volume2,
     items: [
       { id: 'phonology', label: 'Phonology' },
       { id: 'phonotactics', label: 'Phonotactics' },
@@ -40,7 +49,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'vocabulary',
     label: 'Vocabulary',
-    icon: '📖',
+    icon: BookOpen,
     items: [
       { id: 'lexicon', label: 'Lexicon' },
       { id: 'names', label: 'Names' },
@@ -50,7 +59,7 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'writing',
     label: 'Writing & Style',
-    icon: '✍️',
+    icon: PenTool,
     items: [
       { id: 'script', label: 'Script' },
       { id: 'style', label: 'Style' },
@@ -59,13 +68,13 @@ const NAV_CATEGORIES: NavCategory[] = [
   {
     id: 'grammar',
     label: 'Grammar',
-    icon: '📐',
+    icon: GitBranch,
     items: [{ id: 'grammar', label: 'Morphology & Syntax' }],
   },
   {
     id: 'tools',
     label: 'Tools',
-    icon: '🛠️',
+    icon: Wrench,
     items: [
       { id: 'generator', label: 'Text Generator' },
       { id: 'history', label: 'Version History' },
@@ -82,7 +91,6 @@ interface EditorNavigationProps {
 
 export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationProps) {
   const [openCategories, setOpenCategories] = useState<Set<string>>(() => {
-    // Open the category containing the active tab by default
     const initial = new Set<string>()
     for (const cat of NAV_CATEGORIES) {
       if (cat.defaultOpen || cat.items.some(item => item.id === activeTab)) {
@@ -106,14 +114,8 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
 
   const handleItemClick = (itemId: string, categoryId: string) => {
     onTabChange(itemId)
-    // Ensure category is open when item is selected
     setOpenCategories(prev => new Set([...prev, categoryId]))
   }
-
-  // Find which category the active tab belongs to
-  const activeCategoryId = NAV_CATEGORIES.find(cat =>
-    cat.items.some(item => item.id === activeTab)
-  )?.id
 
   return (
     <nav className="space-y-1">
@@ -121,8 +123,8 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
         const isOpen = openCategories.has(category.id)
         const hasActiveItem = category.items.some(item => item.id === activeTab)
         const isSingleItem = category.items.length === 1
+        const Icon = category.icon
 
-        // For single-item categories, just show the item directly
         if (isSingleItem) {
           const item = category.items[0]
           return (
@@ -135,7 +137,7 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
               )}
               onClick={() => onTabChange(item.id)}
             >
-              <span className="text-base">{category.icon}</span>
+              <Icon className="h-4 w-4" />
               <span>{category.label}</span>
             </Button>
           )
@@ -143,7 +145,6 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
 
         return (
           <div key={category.id} className="space-y-0.5">
-            {/* Category header */}
             <Button
               variant="ghost"
               className={cn(
@@ -153,7 +154,7 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
               onClick={() => toggleCategory(category.id)}
             >
               <span className="flex items-center gap-2">
-                <span className="text-base">{category.icon}</span>
+                <Icon className="h-4 w-4" />
                 <span>{category.label}</span>
               </span>
               {isOpen ? (
@@ -163,7 +164,6 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
               )}
             </Button>
 
-            {/* Category items */}
             {isOpen && (
               <div className="ml-6 space-y-0.5">
                 {category.items.map(item => (
@@ -187,4 +187,3 @@ export function EditorNavigation({ activeTab, onTabChange }: EditorNavigationPro
     </nav>
   )
 }
-

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Shuffle, Star, Lock, Unlock } from 'lucide-react'
 
 interface GeneratedWord {
   phonemic: string
@@ -157,7 +158,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
                   </Button>
                   {favoriteCount > 0 && (
                     <Button variant="ghost" size="sm" onClick={selectFavorites}>
-                      Select ★ ({favoriteCount})
+                      Select <Star className="h-3 w-3 mx-1 fill-current" /> ({favoriteCount})
                     </Button>
                   )}
                   {lockedCount > 0 && generatedWords.length > lockedCount && (
@@ -204,7 +205,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
                         }`}
                         title={word.favorite ? 'Remove from favorites' : 'Add to favorites'}
                       >
-                        {word.favorite ? '★' : '☆'}
+                        <Star className={`h-4 w-4 ${word.favorite ? 'fill-current' : ''}`} />
                       </button>
                       <button
                         onClick={(e) => toggleWordLock(i, e)}
@@ -213,7 +214,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
                         }`}
                         title={word.locked ? 'Unlock (will be replaced on regenerate)' : 'Lock (keep on regenerate)'}
                       >
-                        {word.locked ? '🔒' : '🔓'}
+                        {word.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
@@ -222,8 +223,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
               
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>• Click words to select, then add to lexicon</p>
-                <p>• ★ Favorite words for easy selection later</p>
-                <p>• 🔒 Lock words to keep them when regenerating</p>
+                <p>• Star words to mark as favorites for easy selection</p>
+                <p>• Lock words to keep them when regenerating</p>
               </div>
             </div>
           )}
@@ -242,7 +243,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
               <div className="flex items-center justify-between">
                 <Label>Generation Seed</Label>
                 <Button variant="outline" size="sm" onClick={randomizeSeed}>
-                  🎲 Randomize
+                  <Shuffle className="h-4 w-4 mr-1" /> Randomize
                 </Button>
               </div>
               <Input

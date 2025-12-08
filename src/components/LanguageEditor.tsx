@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EditorNavigation } from './EditorNavigation'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { Globe, Lock, Copy, Trash2 } from 'lucide-react'
 import { generateWords, LanguageDefinition } from '@/lib/generator'
 import { OverviewTab } from './tabs/OverviewTab'
 import { PhonologyTab } from './tabs/PhonologyTab'
@@ -416,9 +417,9 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                   >
                     <div className="flex flex-col items-start w-full">
                       <div className="font-medium text-sm truncate w-full">{lang.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {lang.is_public ? '🌐 Public' : '🔒 Private'}
-                      </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      {lang.is_public ? <><Globe className="h-3 w-3" /> Public</> : <><Lock className="h-3 w-3" /> Private</>}
+                    </div>
                     </div>
                   </Button>
                 ))}
@@ -468,7 +469,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           {user && currentLanguage?.id && (
             <div className="flex gap-1">
               <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm" title={currentLanguage.is_public ? 'Make Private' : 'Make Public'}>
-                {currentLanguage.is_public ? '🔒' : '🌐'}
+                {currentLanguage.is_public ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
               </Button>
               <ShareDialog
                 languageSlug={currentLanguage.slug || null}
@@ -477,10 +478,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 onTogglePublic={handleTogglePublic}
               />
               <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm" title="Duplicate">
-                📋
+                <Copy className="h-4 w-4" />
               </Button>
               <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive" title="Delete">
-                🗑️
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           )}
