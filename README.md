@@ -1,90 +1,76 @@
-# Conlang App
+# Conlang
 
-A single-page application for creating and sharing constructed languages, built with Next.js 16, TypeScript, Tailwind CSS v4, shadcn/ui, and Supabase.
+**Build constructed languages with instant feedback.**
 
-**Live at: [conlang.app](https://conlang.app)**
+A modern web app for creating, testing, and sharing conlangs (constructed languages). Define sounds, build vocabulary, generate words deterministically, and see your language come to life.
+
+**[Live Demo →](https://conlang.app)**
+
+---
+
+## Why Conlang?
+
+Creating a constructed language is complex. You need to define phonology, build vocabulary, ensure consistency, and test how it sounds. Conlang makes this process **interactive and immediate**:
+
+- **Start instantly** — No signup required. Your work saves locally.
+- **Generate words** — Seeded randomization means reproducible results.
+- **Test phrases** — See how your language handles real sentences.
+- **Share publicly** — Get a unique URL to share your creation.
+
+---
 
 ## Features
 
-### Core Features
-- **Anonymous Usage**: Start building languages immediately without signing up
-- **Local Draft Persistence**: Saves work locally in browser storage
-- **Auth on Demand**: Only requires login when saving to the cloud
-- **Multiple Languages**: Logged-in users can create and manage multiple languages
-- **Public Sharing**: Share languages publicly via unique URLs (`/l/[slug]`)
-- **Deterministic Generation**: Seeded RNG ensures reproducible word generation
+### Sound System
+- **Phonology** — Define consonants and vowels with presets (Elvish, Harsh, Japanese-like, etc.)
+- **Phonotactics** — Weighted syllable templates (CV, CVC, CVCC) and forbidden sequences
+- **Orthography** — Map phonemes to written forms with digraph support
+- **Phonological Rules** — Context-sensitive sound changes
 
-### Language Building
-- **Phonology**: Define consonants and vowels with presets (airy, harsh, alien, etc.)
-- **Phonotactics**: Weighted syllable templates and forbidden sequences
-- **Orthography**: Phoneme-to-grapheme mapping with digraph support
-- **Phonological Rules**: Find/replace rules with context
-- **Morphology**: Affixes, syntax configuration (SVO/SOV/etc.)
-- **Writing System**: Custom scripts with SVG glyph support
+### Vocabulary
+- **Word Generator** — Generate words matching your sound rules
+- **Lexicon** — Full vocabulary management with search, tags, and notes
+- **Name Generator** — Create person names, place names, and faction names
+- **Sample Phrases** — Test with phrase packs (Everyday, Fantasy, Sci-Fi)
 
-### Tools
-- **Word Generator**: Generate words with style controls
-- **Name Generator**: People, places, and faction names
-- **Sample Phrases**: Phrase packs for testing (Everyday, Fantasy, Sci-Fi)
-- **Text Generator**: Structured gloss-to-conlang translation
-- **Lexicon**: Full CRUD vocabulary management
+### Writing & Style
+- **Custom Scripts** — Draw glyphs or use AI to clean up sketches
+- **Style Controls** — Preferred/avoided sounds, common endings
+- **Script Preview** — See text rendered in your custom writing system
+
+### Grammar
+- **Morphology** — Prefixes, suffixes, infixes, and circumfixes
+- **Syntax** — Word order (SVO/SOV/etc.), adjective position, adpositions
+- **Text Generator** — Transform structured glosses into conlang sentences
 
 ### Collaboration
-- **Version History**: Snapshots for reverting changes
-- **Preset Marketplace**: Share phonology, morphology, and full language presets
-- **Community Phrase Packs**: User-contributed phrase collections
+- **Public Sharing** — Share languages via unique URLs
+- **Version History** — Snapshot and restore previous versions
+- **Preset Marketplace** — Share and download community presets
+- **Community Phrases** — User-contributed phrase packs
 
-## Tech Stack
+---
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth (Magic Links)
-- **Deployment**: Vercel
+## Quick Start
 
-## Local Development
+### Try it Online
 
-### 1. Install Dependencies
+Visit **[conlang.app](https://conlang.app)** — no installation needed.
+
+### Run Locally
 
 ```bash
+# Clone the repo
+git clone https://github.com/coreyhaines31/conlang.git
+cd conlang
+
+# Install dependencies
 npm install
-```
 
-### 2. Set up Supabase
+# Set up environment (see Configuration below)
+cp .env.example .env.local
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Copy your project URL and anon key from the API settings
-
-### 3. Configure Environment Variables
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-### 4. Set up Database
-
-Run the migrations in your Supabase SQL Editor:
-
-1. `supabase/migrations/001_languages_table.sql`
-2. `supabase/migrations/002_lexicon_entries_table.sql`
-3. `supabase/migrations/003_snapshots_table.sql`
-
-### 5. Configure Auth
-
-In Supabase Dashboard → Authentication → URL Configuration:
-
-1. Add `http://localhost:3000/auth/callback` to Redirect URLs
-2. Enable Email provider (for Magic Links)
-
-### 6. Run Development Server
-
-```bash
+# Run development server
 npm run dev
 ```
 
@@ -92,196 +78,195 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Deployment to Vercel
+## Configuration
 
-### Quick Deploy
+### Environment Variables
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/coreyhaines31/conlang)
+Create `.env.local`:
 
-### Manual Deployment
+```env
+# Supabase (required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-#### 1. Connect Repository
+# Site URL (for auth redirects)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-1. Go to [vercel.com](https://vercel.com)
-2. Import your GitHub repository
-3. Vercel auto-detects Next.js
-
-#### 2. Configure Environment Variables
-
-In Vercel Dashboard → Project Settings → Environment Variables:
-
-| Variable | Value | Environment |
-|----------|-------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | All |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `your-anon-key` | All |
-| `NEXT_PUBLIC_SITE_URL` | `https://conlang.app` | Production |
-| `NEXT_PUBLIC_SITE_URL` | `https://your-preview.vercel.app` | Preview |
-
-#### 3. Configure Custom Domain
-
-1. Go to Project Settings → Domains
-2. Add `conlang.app`
-3. Configure DNS at your registrar:
-
-```
-Type: A
-Name: @
-Value: 76.76.21.21
-
-Type: CNAME
-Name: www
-Value: cname.vercel-dns.com
+# OpenAI (optional, for AI glyph cleanup)
+OPENAI_API_KEY=sk-your-key
 ```
 
-#### 4. Update Supabase Auth URLs
+### Database Setup
 
-In Supabase Dashboard → Authentication → URL Configuration:
+1. Create a [Supabase](https://supabase.com) project
+2. Run migrations in the SQL Editor:
 
-Add these to Redirect URLs:
+```sql
+-- Run in order:
+-- 1. supabase/migrations/001_languages_table.sql
+-- 2. supabase/migrations/002_lexicon_entries_table.sql
+-- 3. supabase/migrations/003_snapshots_table.sql
 ```
-https://conlang.app/auth/callback
-https://www.conlang.app/auth/callback
-https://*.vercel.app/auth/callback  (for previews)
-```
 
-#### 5. Run Production Migrations
-
-Run these in your Supabase SQL Editor:
-1. `001_languages_table.sql`
-2. `002_lexicon_entries_table.sql`
-3. `003_snapshots_table.sql`
-
-### Build Commands
-
-Vercel uses these automatically:
-- **Build**: `npm run build`
-- **Output**: `.next`
-- **Install**: `npm install`
+3. Enable Email auth in Authentication → Providers
 
 ---
 
-## Database Schema
+## Tech Stack
 
-### Languages Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| user_id | UUID | References auth.users |
-| name | TEXT | Language name |
-| slug | TEXT | Unique URL slug |
-| is_public | BOOLEAN | Public visibility |
-| seed | BIGINT | Random seed for deterministic generation |
-| generator_version | TEXT | Version of generator algorithm |
-| definition | JSONB | Full language configuration |
-| created_at | TIMESTAMPTZ | Creation timestamp |
-| updated_at | TIMESTAMPTZ | Last update timestamp |
-
-### Lexicon Entries Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| language_id | UUID | References languages.id |
-| gloss | TEXT | English meaning |
-| part_of_speech | TEXT | Part of speech |
-| phonemic_form | TEXT | Phonemic representation |
-| orthographic_form | TEXT | Written form |
-| tags | TEXT[] | Array of tags |
-| notes | TEXT | Additional notes |
-
-### Snapshots Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| language_id | UUID | References languages.id |
-| name | TEXT | Snapshot name |
-| description | TEXT | What changed |
-| definition | JSONB | Snapshot of definition |
-| lexicon_count | INTEGER | Word count at snapshot |
-
-### Presets Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| user_id | UUID | Creator |
-| type | TEXT | phonology/phonotactics/morphology/full |
-| name | TEXT | Preset name |
-| content | JSONB | Preset content |
-| downloads | INTEGER | Download count |
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Components | shadcn/ui + Lucide Icons |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth (Magic Links) |
+| AI | OpenAI GPT-4o (optional) |
+| Hosting | Vercel |
 
 ---
 
 ## Project Structure
 
 ```
-conlang/
-├── src/
-│   ├── app/
-│   │   ├── page.tsx              # Main editor
-│   │   ├── actions.ts            # Server actions
-│   │   ├── l/[slug]/page.tsx     # Public language view
-│   │   └── auth/callback/        # Auth handler
-│   ├── components/
-│   │   ├── LanguageEditor.tsx    # Main editor
-│   │   ├── tabs/                 # All tab components
-│   │   │   ├── OverviewTab.tsx
-│   │   │   ├── PhonologyTab.tsx
-│   │   │   ├── PhonotacticsTab.tsx
-│   │   │   ├── OrthographyTab.tsx
-│   │   │   ├── LexiconTab.tsx
-│   │   │   ├── SamplePhrasesTab.tsx
-│   │   │   ├── StyleTab.tsx
-│   │   │   ├── NamesTab.tsx
-│   │   │   ├── ScriptTab.tsx
-│   │   │   ├── MorphologyTab.tsx
-│   │   │   ├── VersionHistoryTab.tsx
-│   │   │   ├── CommunityPhrasesTab.tsx
-│   │   │   └── TextGeneratorTab.tsx
-│   │   ├── PresetBrowser.tsx
-│   │   ├── ShareDialog.tsx
-│   │   └── ui/                   # shadcn/ui
-│   └── lib/
-│       ├── generator.ts          # Word generation (seeded RNG)
-│       ├── morphology.ts         # Affix/syntax system
-│       ├── textGenerator.ts      # Gloss-to-conlang
-│       ├── phrases.ts            # Phrase packs
-│       ├── presets.ts            # Phonology presets
-│       ├── script.ts             # Writing system
-│       └── supabase/
-├── supabase/migrations/          # SQL migrations
-├── vercel.json                   # Vercel config
-└── next.config.ts                # Next.js config
+src/
+├── app/
+│   ├── page.tsx                 # Main editor
+│   ├── actions.ts               # Server actions (DB operations)
+│   ├── api/glyph/route.ts       # AI glyph generation
+│   ├── l/[slug]/page.tsx        # Public language view
+│   └── auth/callback/           # Auth handler
+├── components/
+│   ├── LanguageEditor.tsx       # Main editor shell
+│   ├── EditorNavigation.tsx     # Sidebar navigation
+│   ├── GlyphCanvas.tsx          # Drawing canvas for glyphs
+│   ├── tabs/                    # Feature tabs
+│   │   ├── OverviewTab.tsx      # Word generation
+│   │   ├── PhonologyTab.tsx     # Consonants/vowels
+│   │   ├── PhonotacticsTab.tsx  # Syllable structure
+│   │   ├── OrthographyTab.tsx   # Spelling rules
+│   │   ├── LexiconTab.tsx       # Vocabulary
+│   │   ├── ScriptTab.tsx        # Custom writing system
+│   │   ├── MorphologyTab.tsx    # Grammar
+│   │   └── ...
+│   └── ui/                      # shadcn/ui components
+└── lib/
+    ├── generator.ts             # Seeded word generation
+    ├── morphology.ts            # Affix system
+    ├── script.ts                # Writing system utilities
+    ├── textGenerator.ts         # Gloss → conlang
+    └── supabase/                # DB client & types
 ```
 
 ---
 
-## Environment Variables Reference
+## Database Schema
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key |
-| `NEXT_PUBLIC_SITE_URL` | No | Site URL for OAuth redirects |
+### languages
+Core language definitions with JSON configuration.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | UUID | Owner |
+| name | TEXT | Language name |
+| slug | TEXT | URL-safe identifier |
+| is_public | BOOLEAN | Visibility |
+| seed | BIGINT | RNG seed for determinism |
+| definition | JSONB | Full configuration |
+
+### lexicon_entries
+Vocabulary items linked to languages.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| language_id | UUID | Parent language |
+| gloss | TEXT | English meaning |
+| phonemic_form | TEXT | /phonemic/ |
+| orthographic_form | TEXT | Written form |
+| part_of_speech | TEXT | Noun, verb, etc. |
+| tags | TEXT[] | Categories |
+
+### snapshots
+Version history for languages.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| language_id | UUID | Parent language |
+| name | TEXT | Version name |
+| definition | JSONB | Frozen state |
 
 ---
 
-## Troubleshooting
+## Deployment
 
-### Build Fails
-- Ensure all environment variables are set in Vercel
-- Check that Supabase URL doesn't have trailing slash
+### Vercel (Recommended)
 
-### Auth Not Working
-- Verify redirect URLs in Supabase match your domain
-- Check browser console for CORS errors
-- Ensure `NEXT_PUBLIC_SITE_URL` matches your domain
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/coreyhaines31/conlang)
 
-### Database Errors
-- Run all migrations in order
-- Check RLS policies are enabled
-- Verify anon key has correct permissions
+1. Import repo to Vercel
+2. Add environment variables
+3. Deploy
+
+### Custom Domain
+
+Add DNS records:
+```
+A     @    76.76.21.21
+CNAME www  cname.vercel-dns.com
+```
+
+Update Supabase redirect URLs:
+```
+https://yourdomain.com/auth/callback
+```
+
+---
+
+## Development
+
+### Commands
+
+```bash
+npm run dev      # Start dev server
+npm run build    # Production build
+npm run test     # Run tests
+npm run lint     # Lint code
+```
+
+### Testing
+
+```bash
+npm run test           # Run all tests
+npm run test:coverage  # With coverage report
+```
+
+---
+
+## Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open a Pull Request
 
 ---
 
 ## License
 
-MIT
+MIT © 2024
+
+---
+
+## Acknowledgments
+
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful components
+- [Lucide](https://lucide.dev/) for icons
+- [Supabase](https://supabase.com/) for backend infrastructure
+- The conlang community for inspiration
