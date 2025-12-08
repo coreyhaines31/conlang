@@ -1,8 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+
+// Rate limit: 10 AI glyph generations per minute per IP
+const RATE_LIMIT_CONFIG = {
+  limit: 10,
+  windowMs: 60 * 1000, // 1 minute
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit first
+    const clientIP = getClientIP(request)
+    const rateLimitResult = rateLimit(`glyph:${clientIP}`, RATE_LIMIT_CONFIG)
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded. Please wait before generating more glyphs.',
+          resetIn: rateLimitResult.resetIn 
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.resetIn),
+            'Retry-After': String(rateLimitResult.resetIn),
+          }
+        }
+      )
+    }
+
     const { sketchDataUrl, style, phoneme } = await request.json()
 
     if (!process.env.OPENAI_API_KEY) {
@@ -85,7 +114,16 @@ The glyph should be ${styleDescription}.`
       )
     }
 
-    return NextResponse.json({ svg: cleanSvg })
+    return NextResponse.json(
+      { svg: cleanSvg },
+      {
+        headers: {
+          'X-RateLimit-Limit': String(rateLimitResult.limit),
+          'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+          'X-RateLimit-Reset': String(rateLimitResult.resetIn),
+        }
+      }
+    )
   } catch (error: any) {
     console.error('Glyph generation error:', error)
     return NextResponse.json(
