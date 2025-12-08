@@ -57,7 +57,7 @@
 
 ---
 
-## Phase 2 — Accounts only for saving (Weeks 4–6) 🚧
+## Phase 2 — Accounts only for saving (Weeks 4–6) ✅
 
 ### User Stories
 - [x] As a user, I don't need an account to play.
@@ -69,30 +69,30 @@
 - [x] Auth modal triggered only by "Save to account"
 - [x] "My Languages" list (logged-in)
 - [x] Save, delete language
-- [ ] Duplicate language
+- [x] Duplicate language
 - [x] Public/private toggle
 - [x] Public read-only page: `/l/[slug]`
-- [ ] "Copy this language to my account" from public page
+- [x] "Copy this language to my account" from public page
 
 ---
 
-## Phase 3 — Sample Phrases (the "writer hook") (Weeks 6–8)
+## Phase 3 — Sample Phrases (the "writer hook") (Weeks 6–8) ✅
 
 ### User Stories
-- [ ] As a writer, I can see what my language looks like in real sentences fast.
-- [ ] As a user, I can render sample phrases even if my lexicon is incomplete.
-- [ ] As a user, I can fill missing words automatically and choose what to keep.
+- [x] As a writer, I can see what my language looks like in real sentences fast.
+- [x] As a user, I can render sample phrases even if my lexicon is incomplete.
+- [x] As a user, I can fill missing words automatically and choose what to keep.
 
 ### Features
-- [ ] Sample Phrases tab with phrase packs:
-  - Everyday
-  - Fantasy dialogue
-  - Sci-fi ops
-- [ ] Renderer (not called translation):
+- [x] Sample Phrases tab with phrase packs:
+  - Everyday (20 phrases)
+  - Fantasy dialogue (20 phrases)
+  - Sci-fi ops (20 phrases)
+- [x] Renderer (not called translation):
   - Substitutes from lexicon
-  - Generates placeholders for missing words
-- [ ] "Add missing words to lexicon" with a diff/preview
-- [ ] Output toggles: orthographic / phonemic / both
+  - Generates placeholders for missing words (highlighted in amber)
+- [x] "Add missing words to lexicon" with selection UI
+- [x] Output toggles: orthographic / phonemic / both
 
 ---
 
@@ -180,7 +180,8 @@
 ## Current Status
 
 **Phase 0**: ✅ Complete  
-**Phase 1**: 🚧 ~70% complete  
-**Phase 2**: 🚧 ~80% complete  
-**Phase 3-8**: ⏳ Not started
+**Phase 1**: ✅ Complete  
+**Phase 2**: ✅ Complete  
+**Phase 3**: ✅ Complete  
+**Phase 4-8**: ⏳ Not started
 
