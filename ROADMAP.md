@@ -193,14 +193,32 @@
 
 ---
 
-## Phase 8 — "Translation" (Later)
+## Phase 8 — "Translation" (Text Generator) ✅
 
 ### User Stories
-- [ ] As a writer, I can type intent and get conlang text that follows my rules.
+- [x] As a writer, I can type intent and get conlang text that follows my rules.
 
-### Feature Direction (choose one)
-- **Safe path**: "Text generator" where user provides structured gloss and constraints
-- **Hard path**: Real translation (requires deep grammar + lexicon coverage + parsing)
+### Features (Safe Path: Structured Text Generator)
+- [x] Visual sentence builder
+  - Add words with glosses
+  - Assign grammatical roles (S/V/O/ADJ/ADV/DET/PREP/etc.)
+  - Set grammatical features (number, tense, person, case, negation, diminutive)
+  - Multiple clauses support
+- [x] Gloss notation mode
+  - Linguistic notation format: `ROLE:gloss[FEATURES]`
+  - Example: `S:cat[SG] V:see[PAST.3RD] O:dog[PL]`
+  - Bi-directional conversion between visual and notation modes
+- [x] Morphology integration
+  - Automatic affix application based on grammatical features
+  - Word order reordering based on syntax settings
+  - Adjective positioning based on language rules
+- [x] Multiple output displays
+  - Phonemic transcription
+  - Orthographic output
+  - Interlinear gloss
+  - Detailed word breakdown table
+- [x] Quick example templates
+- [x] Add generated words to lexicon
 
 ---
 
@@ -214,5 +232,7 @@
 **Phase 5**: ✅ Complete  
 **Phase 6**: ✅ Complete  
 **Phase 7**: ✅ Complete  
-**Phase 8**: ⏳ Not started
+**Phase 8**: ✅ Complete  
+
+🎉 **All Phases Complete!**
 

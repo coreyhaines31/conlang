@@ -35,6 +35,7 @@ import { VersionHistoryTab } from './tabs/VersionHistoryTab'
 import { PresetBrowser } from './PresetBrowser'
 import { ShareDialog } from './ShareDialog'
 import { CommunityPhrasesTab } from './tabs/CommunityPhrasesTab'
+import { TextGeneratorTab } from './tabs/TextGeneratorTab'
 import { Preset } from '@/lib/supabase/types'
 
 interface LanguageEditorProps {
@@ -488,6 +489,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="presets">Presets</TabsTrigger>
                 <TabsTrigger value="community">Community</TabsTrigger>
+                <TabsTrigger value="generator">Generator</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -637,6 +639,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               <TabsContent value="community" className="mt-6">
                 <CommunityPhrasesTab
                   isAuthenticated={!!user}
+                />
+              </TabsContent>
+
+              <TabsContent value="generator" className="mt-6">
+                <TextGeneratorTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  lexiconEntries={lexiconEntries}
+                  seed={currentLanguage.seed || 12345}
+                  onAddToLexicon={handleAddToLexicon}
                 />
               </TabsContent>
             </Tabs>
