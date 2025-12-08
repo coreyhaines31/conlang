@@ -397,7 +397,7 @@ function generateWord(
 /**
  * Apply orthography mapping to convert phonemic form to orthographic form
  */
-function applyOrthography(phonemic: string, orthography?: Orthography): string {
+export function applyOrthography(phonemic: string, orthography?: Orthography): string {
   if (!orthography || !orthography.mappings) {
     return phonemic
   }

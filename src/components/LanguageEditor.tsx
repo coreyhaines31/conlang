@@ -310,6 +310,37 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }))
   }
 
+  const handleAddToLexicon = async (entries: Array<{ gloss: string; phonemic: string; orthographic: string }>) => {
+    if (!currentLanguage?.id || !user) {
+      // For local draft, just show an alert
+      alert('Save your language first to add entries to the lexicon.')
+      return
+    }
+
+    try {
+      const { createLexiconEntry } = await import('@/app/actions')
+      const newEntries: LexiconEntry[] = []
+      
+      for (const entry of entries) {
+        const created = await createLexiconEntry(
+          currentLanguage.id,
+          entry.gloss,
+          undefined, // part of speech
+          entry.phonemic,
+          entry.orthographic
+        )
+        if (created) {
+          newEntries.push(created)
+        }
+      }
+      
+      setLexiconEntries(prev => [...prev, ...newEntries])
+    } catch (error) {
+      console.error('Failed to add entries to lexicon:', error)
+      alert('Failed to add some entries to the lexicon.')
+    }
+  }
+
   const handleApplyPreset = (preset: Preset) => {
     if (!currentLanguage) return
 
