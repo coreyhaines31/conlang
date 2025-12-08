@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { GlyphCanvas } from '@/components/GlyphCanvas'
 
 interface ScriptTabProps {
   definition: LanguageDefinition
@@ -29,6 +30,8 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
   const [newGlyphName, setNewGlyphName] = useState('')
   const [newGlyphSvg, setNewGlyphSvg] = useState('')
   const [selectedGlyph, setSelectedGlyph] = useState<string | null>(null)
+  const [showDrawingMode, setShowDrawingMode] = useState(false)
+  const [drawingPhoneme, setDrawingPhoneme] = useState('')
 
   const writingSystem = definition.writingSystem || createEmptyWritingSystem()
   const phonology = definition.phonology || { consonants: [], vowels: [] }
@@ -65,6 +68,32 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
     
     setNewGlyphName('')
     setNewGlyphSvg('')
+  }
+
+  const handleDrawnGlyph = (svg: string) => {
+    const phoneme = drawingPhoneme || `glyph-${Date.now()}`
+    
+    const newGlyph: Glyph = {
+      id: `glyph-${Date.now()}`,
+      name: phoneme,
+      svg,
+      width: 100,
+      height: 100,
+    }
+    
+    // Add glyph and create mapping
+    const newMapping: GlyphMapping = {
+      glyph: newGlyph.id,
+      phoneme,
+      grapheme: phoneme,
+    }
+    
+    updateWritingSystem({
+      glyphs: [...writingSystem.glyphs, newGlyph],
+      mappings: [...writingSystem.mappings.filter(m => m.phoneme !== phoneme), newMapping],
+    })
+    
+    setDrawingPhoneme('')
   }
 
   const handleRemoveGlyph = (glyphId: string) => {
@@ -133,12 +162,65 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Draw Glyphs - Primary Action */}
+      <Card>
+        <CardHeader>
+          <CardTitle>✏️ Draw Glyphs</CardTitle>
+          <CardDescription>
+            Sketch a glyph and let AI clean it up, or use procedural stylization
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Phoneme selector */}
+            <div className="space-y-3">
+              <Label>Select phoneme to create glyph for:</Label>
+              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 border rounded">
+                {allPhonemes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Add consonants and vowels in the Phonology tab first
+                  </p>
+                ) : (
+                  allPhonemes.map(phoneme => {
+                    const hasGlyph = writingSystem.mappings.some(m => m.phoneme === phoneme)
+                    return (
+                      <Button
+                        key={phoneme}
+                        variant={drawingPhoneme === phoneme ? 'default' : hasGlyph ? 'secondary' : 'outline'}
+                        size="sm"
+                        onClick={() => setDrawingPhoneme(phoneme)}
+                        className={hasGlyph ? 'opacity-60' : ''}
+                      >
+                        {phoneme} {hasGlyph && '✓'}
+                      </Button>
+                    )
+                  })
+                )}
+              </div>
+              {drawingPhoneme && (
+                <p className="text-sm font-medium">
+                  Drawing glyph for: <span className="font-mono text-lg">{drawingPhoneme}</span>
+                </p>
+              )}
+            </div>
+            
+            {/* Drawing canvas */}
+            <div>
+              <GlyphCanvas 
+                onSave={handleDrawnGlyph} 
+                phoneme={drawingPhoneme}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Script Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Writing System</CardTitle>
+          <CardTitle>Writing System Settings</CardTitle>
           <CardDescription>
-            Create a custom script for your language
+            Configure your script&apos;s properties
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -222,10 +304,12 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Add new glyph */}
-          <div className="border-b pb-4">
-            <Label className="text-sm mb-2 block">Add New Glyph</Label>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Add new glyph manually */}
+          <details className="border-b pb-4">
+            <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+              Advanced: Add glyph with SVG code
+            </summary>
+            <div className="grid grid-cols-3 gap-2 mt-3">
               <Input
                 placeholder="Glyph name (e.g., a)"
                 value={newGlyphName}
@@ -240,7 +324,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
                 Add Glyph
               </Button>
             </div>
-          </div>
+          </details>
 
           {/* Glyph grid */}
           {writingSystem.glyphs.length === 0 ? (
