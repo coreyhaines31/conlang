@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { EditorNavigation } from './EditorNavigation'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { generateWords, LanguageDefinition } from '@/lib/generator'
@@ -383,20 +383,21 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 border-r bg-card p-4 flex flex-col">
-        <div className="mb-4 space-y-2">
-          <Button onClick={handleNewLanguage} className="w-full">
+      {/* Left Sidebar - Languages & Actions */}
+      <div className="w-56 border-r bg-card p-3 flex flex-col">
+        <div className="mb-3 space-y-2">
+          <Button onClick={handleNewLanguage} className="w-full" size="sm">
             New Language
           </Button>
-          <div className="flex gap-2">
-            <Button onClick={handleImport} variant="outline" className="flex-1 text-xs">
+          <div className="flex gap-1">
+            <Button onClick={handleImport} variant="outline" className="flex-1 text-xs" size="sm">
               Import
             </Button>
             <Button
               onClick={handleExport}
               variant="outline"
               className="flex-1 text-xs"
+              size="sm"
               disabled={!currentLanguage}
             >
               Export
@@ -404,24 +405,27 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           </div>
         </div>
 
-        {user && (
-          <div className="flex-1 overflow-y-auto">
-            <h3 className="font-semibold mb-2 text-sm">My Languages</h3>
+        {user && languages.length > 0 && (
+          <div className="flex-1 overflow-y-auto mb-3">
+            <h3 className="font-semibold mb-2 text-xs text-muted-foreground uppercase tracking-wide">
+              My Languages
+            </h3>
             <div className="space-y-1">
               {languages.map(lang => (
                 <Button
                   key={lang.id}
                   onClick={() => handleSelectLanguage(lang)}
                   variant={currentLanguage?.id === lang.id ? 'secondary' : 'ghost'}
+                  size="sm"
                   className={cn(
-                    'w-full justify-start h-auto py-2',
+                    'w-full justify-start h-auto py-1.5 px-2',
                     currentLanguage?.id === lang.id && 'bg-secondary'
                   )}
                 >
                   <div className="flex flex-col items-start w-full">
-                    <div className="font-medium">{lang.name}</div>
+                    <div className="font-medium text-sm truncate w-full">{lang.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {lang.is_public ? 'Public' : 'Private'}
+                      {lang.is_public ? '🌐 Public' : '🔒 Private'}
                     </div>
                   </div>
                 </Button>
@@ -430,29 +434,33 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           </div>
         )}
 
-        <div className="space-y-2 pt-4 border-t">
-          <Button
-            onClick={handleSaveToLocal}
-            disabled={!currentLanguage?.name}
-            className="w-full"
-            variant="outline"
-          >
-            Save to Local
-          </Button>
-          <Button
-            onClick={handleSaveToAccount}
-            disabled={saving || !currentLanguage?.name}
-            className="w-full"
-            variant="default"
-          >
-            {saving ? 'Saving...' : 'Save to Account'}
-          </Button>
+        <div className="space-y-2 pt-3 border-t mt-auto">
+          <div className="flex gap-1">
+            <Button
+              onClick={handleSaveToLocal}
+              disabled={!currentLanguage?.name}
+              className="flex-1"
+              variant="outline"
+              size="sm"
+            >
+              Save Local
+            </Button>
+            <Button
+              onClick={handleSaveToAccount}
+              disabled={saving || !currentLanguage?.name}
+              className="flex-1"
+              variant="default"
+              size="sm"
+            >
+              {saving ? '...' : 'Save'}
+            </Button>
+          </div>
 
           {user && currentLanguage?.id && (
             <>
-              <div className="flex gap-2">
-                <Button onClick={handleTogglePublic} className="flex-1" variant="outline">
-                  {currentLanguage.is_public ? 'Private' : 'Public'}
+              <div className="flex gap-1">
+                <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm">
+                  {currentLanguage.is_public ? '🔒' : '🌐'}
                 </Button>
                 <ShareDialog
                   languageSlug={currentLanguage.slug || null}
@@ -460,32 +468,37 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                   isPublic={currentLanguage.is_public || false}
                   onTogglePublic={handleTogglePublic}
                 />
+                <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm">
+                  📋
+                </Button>
+                <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive">
+                  🗑️
+                </Button>
               </div>
-              <Button onClick={handleDuplicate} disabled={saving} className="w-full" variant="outline">
-                {saving ? 'Duplicating...' : 'Duplicate'}
-              </Button>
-              <Button onClick={handleDelete} className="w-full" variant="destructive">
-                Delete
-              </Button>
             </>
           )}
 
           {user ? (
-            <Button onClick={handleLogout} variant="ghost" className="w-full text-sm">
+            <Button onClick={handleLogout} variant="ghost" className="w-full text-xs" size="sm">
               Logout
             </Button>
           ) : (
             <div className="text-xs text-muted-foreground text-center">
-              Save to account to create account
+              Save to create account
             </div>
           )}
         </div>
       </div>
 
+      {/* Middle Navigation - Categories */}
+      <div className="w-48 border-r bg-muted/30 p-3 overflow-y-auto">
+        <EditorNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+
       {/* Main Editor */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6">
         {currentLanguage ? (
-          <div className="space-y-6">
+          <div className="space-y-4 max-w-5xl">
             <div>
               <Input
                 type="text"
@@ -494,204 +507,180 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                   setCurrentLanguage(prev => ({ ...prev, name: e.target.value }))
                 }
                 placeholder="Language Name"
-                className="text-2xl font-bold border-none shadow-none px-0"
+                className="text-2xl font-bold border-none shadow-none px-0 h-auto"
               />
-              {currentLanguage.slug && (
+              {currentLanguage.slug && currentLanguage.is_public && typeof window !== 'undefined' && (
                 <div className="text-sm text-muted-foreground mt-1">
-                  {currentLanguage.is_public && typeof window !== 'undefined' && (
-                    <span>
-                      Public URL:{' '}
-                      <a
-                        href={`/l/${currentLanguage.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {window.location.origin}/l/{currentLanguage.slug}
-                      </a>
-                    </span>
-                  )}
+                  <a
+                    href={`/l/${currentLanguage.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {window.location.origin}/l/{currentLanguage.slug}
+                  </a>
                 </div>
               )}
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="phonology">Phonology</TabsTrigger>
-                <TabsTrigger value="phonotactics">Phonotactics</TabsTrigger>
-                <TabsTrigger value="orthography">Orthography</TabsTrigger>
-                <TabsTrigger value="lexicon">Lexicon</TabsTrigger>
-                <TabsTrigger value="phrases">Phrases</TabsTrigger>
-                <TabsTrigger value="style">Style</TabsTrigger>
-                <TabsTrigger value="names">Names</TabsTrigger>
-                <TabsTrigger value="script">Script</TabsTrigger>
-                <TabsTrigger value="grammar">Grammar</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger value="presets">Presets</TabsTrigger>
-                <TabsTrigger value="community">Community</TabsTrigger>
-                <TabsTrigger value="generator">Generator</TabsTrigger>
-              </TabsList>
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <OverviewTab
+                language={currentLanguage}
+                onUpdate={setCurrentLanguage}
+                onAddToLexicon={
+                  user && currentLanguage.id
+                    ? async (words) => {
+                        const newEntries = words.map((w, i) => ({
+                          id: `temp-${Date.now()}-${i}`,
+                          language_id: currentLanguage.id!,
+                          gloss: '',
+                          part_of_speech: null,
+                          phonemic_form: w.phonemic,
+                          orthographic_form: w.orthographic,
+                          tags: [],
+                          notes: null,
+                          created_at: new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                        }))
+                        setLexiconEntries(prev => [...prev, ...newEntries])
+                        setActiveTab('lexicon')
+                      }
+                    : undefined
+                }
+              />
+            )}
 
-              <TabsContent value="overview" className="mt-6">
-                <OverviewTab
-                  language={currentLanguage}
-                  onUpdate={setCurrentLanguage}
-                  onAddToLexicon={
-                    user && currentLanguage.id
-                      ? async (words) => {
-                          // Add words to lexicon (local state for now, will save on next save)
-                          const newEntries = words.map((w, i) => ({
-                            id: `temp-${Date.now()}-${i}`,
-                            language_id: currentLanguage.id!,
-                            gloss: '',
-                            part_of_speech: null,
-                            phonemic_form: w.phonemic,
-                            orthographic_form: w.orthographic,
-                            tags: [],
-                            notes: null,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
-                          }))
-                          setLexiconEntries(prev => [...prev, ...newEntries])
-                          setActiveTab('lexicon')
-                        }
-                      : undefined
-                  }
-                />
-              </TabsContent>
+            {activeTab === 'phonology' && (
+              <PhonologyTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+              />
+            )}
 
-              <TabsContent value="phonology" className="mt-6">
-                <PhonologyTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                />
-              </TabsContent>
+            {activeTab === 'phonotactics' && (
+              <PhonotacticsTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+              />
+            )}
 
-              <TabsContent value="phonotactics" className="mt-6">
-                <PhonotacticsTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                />
-              </TabsContent>
+            {activeTab === 'orthography' && (
+              <OrthographyTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+              />
+            )}
 
-              <TabsContent value="orthography" className="mt-6">
-                <OrthographyTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                />
-              </TabsContent>
+            {activeTab === 'lexicon' && (
+              <LexiconTab
+                languageId={currentLanguage.id}
+                entries={lexiconEntries}
+                onEntriesChange={setLexiconEntries}
+                user={user}
+              />
+            )}
 
-              <TabsContent value="lexicon" className="mt-6">
-                <LexiconTab
-                  languageId={currentLanguage.id}
-                  entries={lexiconEntries}
-                  onEntriesChange={setLexiconEntries}
-                  user={user}
-                />
-              </TabsContent>
+            {activeTab === 'phrases' && (
+              <SamplePhrasesTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                lexiconEntries={lexiconEntries}
+                seed={currentLanguage.seed || 0}
+                onAddToLexicon={(entries) => {
+                  const newEntries = entries.map((e, i) => ({
+                    id: `temp-phrase-${Date.now()}-${i}`,
+                    language_id: currentLanguage.id || '',
+                    gloss: e.gloss,
+                    part_of_speech: null,
+                    phonemic_form: e.phonemic,
+                    orthographic_form: e.orthographic,
+                    tags: [],
+                    notes: 'Added from Sample Phrases',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  }))
+                  setLexiconEntries(prev => [...prev, ...newEntries])
+                  setActiveTab('lexicon')
+                }}
+              />
+            )}
 
-              <TabsContent value="phrases" className="mt-6">
-                <SamplePhrasesTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  lexiconEntries={lexiconEntries}
-                  seed={currentLanguage.seed || 0}
-                  onAddToLexicon={(entries) => {
-                    const newEntries = entries.map((e, i) => ({
-                      id: `temp-phrase-${Date.now()}-${i}`,
-                      language_id: currentLanguage.id || '',
-                      gloss: e.gloss,
-                      part_of_speech: null,
-                      phonemic_form: e.phonemic,
-                      orthographic_form: e.orthographic,
-                      tags: [],
-                      notes: 'Added from Sample Phrases',
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
-                    }))
-                    setLexiconEntries(prev => [...prev, ...newEntries])
-                    setActiveTab('lexicon')
-                  }}
-                />
-              </TabsContent>
+            {activeTab === 'style' && (
+              <StyleTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+                seed={currentLanguage.seed || 0}
+              />
+            )}
 
-              <TabsContent value="style" className="mt-6">
-                <StyleTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                  seed={currentLanguage.seed || 0}
-                />
-              </TabsContent>
+            {activeTab === 'names' && (
+              <NamesTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+                seed={currentLanguage.seed || 0}
+                onAddToLexicon={(entries) => {
+                  const newEntries = entries.map((e, i) => ({
+                    id: `temp-name-${Date.now()}-${i}`,
+                    language_id: currentLanguage.id || '',
+                    gloss: e.gloss,
+                    part_of_speech: 'proper noun',
+                    phonemic_form: e.phonemic,
+                    orthographic_form: e.orthographic,
+                    tags: ['name'],
+                    notes: 'Generated name',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  }))
+                  setLexiconEntries(prev => [...prev, ...newEntries])
+                  setActiveTab('lexicon')
+                }}
+              />
+            )}
 
-              <TabsContent value="names" className="mt-6">
-                <NamesTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                  seed={currentLanguage.seed || 0}
-                  onAddToLexicon={(entries) => {
-                    const newEntries = entries.map((e, i) => ({
-                      id: `temp-name-${Date.now()}-${i}`,
-                      language_id: currentLanguage.id || '',
-                      gloss: e.gloss,
-                      part_of_speech: 'proper noun',
-                      phonemic_form: e.phonemic,
-                      orthographic_form: e.orthographic,
-                      tags: ['name'],
-                      notes: 'Generated name',
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
-                    }))
-                    setLexiconEntries(prev => [...prev, ...newEntries])
-                    setActiveTab('lexicon')
-                  }}
-                />
-              </TabsContent>
+            {activeTab === 'script' && (
+              <ScriptTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+              />
+            )}
 
-              <TabsContent value="script" className="mt-6">
-                <ScriptTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                />
-              </TabsContent>
+            {activeTab === 'grammar' && (
+              <MorphologyTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                onUpdate={updateDefinition}
+              />
+            )}
 
-              <TabsContent value="grammar" className="mt-6">
-                <MorphologyTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  onUpdate={updateDefinition}
-                />
-              </TabsContent>
+            {activeTab === 'history' && (
+              <VersionHistoryTab
+                languageId={currentLanguage.id || null}
+                isAuthenticated={!!user}
+                onRestore={() => window.location.reload()}
+              />
+            )}
 
-              <TabsContent value="history" className="mt-6">
-                <VersionHistoryTab
-                  languageId={currentLanguage.id || null}
-                  isAuthenticated={!!user}
-                  onRestore={() => window.location.reload()}
-                />
-              </TabsContent>
+            {activeTab === 'presets' && (
+              <PresetBrowser
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                isAuthenticated={!!user}
+                onApplyPreset={handleApplyPreset}
+              />
+            )}
 
-              <TabsContent value="presets" className="mt-6">
-                <PresetBrowser
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  isAuthenticated={!!user}
-                  onApplyPreset={handleApplyPreset}
-                />
-              </TabsContent>
+            {activeTab === 'community' && (
+              <CommunityPhrasesTab
+                isAuthenticated={!!user}
+              />
+            )}
 
-              <TabsContent value="community" className="mt-6">
-                <CommunityPhrasesTab
-                  isAuthenticated={!!user}
-                />
-              </TabsContent>
-
-              <TabsContent value="generator" className="mt-6">
-                <TextGeneratorTab
-                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
-                  lexiconEntries={lexiconEntries}
-                  seed={currentLanguage.seed || 12345}
-                  onAddToLexicon={handleAddToLexicon}
-                />
-              </TabsContent>
-            </Tabs>
+            {activeTab === 'generator' && (
+              <TextGeneratorTab
+                definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                lexiconEntries={lexiconEntries}
+                seed={currentLanguage.seed || 12345}
+                onAddToLexicon={handleAddToLexicon}
+              />
+            )}
           </div>
         ) : (
           <Card>
