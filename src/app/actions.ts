@@ -275,3 +275,64 @@ export async function duplicateLanguage(languageId: string): Promise<Language | 
   revalidatePath('/')
   return data
 }
+
+export async function copyPublicLanguage(languageId: string): Promise<Language | null> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get the public language (must be public)
+  const { data: original, error: fetchError } = await supabase
+    .from('languages')
+    .select('*')
+    .eq('id', languageId)
+    .eq('is_public', true)
+    .single()
+
+  if (fetchError || !original) throw new Error('Public language not found')
+
+  // Create a new slug for the copy
+  const newName = `${original.name} (Copy)`
+  const newSlug = await createSlug(newName)
+
+  // Create the copy
+  const { data, error } = await supabase
+    .from('languages')
+    .insert({
+      user_id: user.id,
+      name: newName,
+      slug: newSlug,
+      definition: original.definition,
+      seed: original.seed,
+      generator_version: original.generator_version,
+      is_public: false, // Start as private
+    } as any)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // Copy lexicon entries too
+  const { data: lexiconEntries } = await supabase
+    .from('lexicon_entries')
+    .select('*')
+    .eq('language_id', languageId)
+
+  if (lexiconEntries && lexiconEntries.length > 0) {
+    const newEntries = lexiconEntries.map(entry => ({
+      language_id: data.id,
+      gloss: entry.gloss,
+      part_of_speech: entry.part_of_speech,
+      phonemic_form: entry.phonemic_form,
+      orthographic_form: entry.orthographic_form,
+      tags: entry.tags,
+      notes: entry.notes,
+    }))
+
+    await supabase.from('lexicon_entries').insert(newEntries)
+  }
+
+  revalidatePath('/')
+  return data
+}

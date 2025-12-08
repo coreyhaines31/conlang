@@ -26,6 +26,7 @@ import { PhonologyTab } from './tabs/PhonologyTab'
 import { PhonotacticsTab } from './tabs/PhonotacticsTab'
 import { OrthographyTab } from './tabs/OrthographyTab'
 import { LexiconTab } from './tabs/LexiconTab'
+import { SamplePhrasesTab } from './tabs/SamplePhrasesTab'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -432,6 +433,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="phonotactics">Phonotactics</TabsTrigger>
                 <TabsTrigger value="orthography">Orthography</TabsTrigger>
                 <TabsTrigger value="lexicon">Lexicon</TabsTrigger>
+                <TabsTrigger value="phrases">Phrases</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -489,6 +491,30 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                   entries={lexiconEntries}
                   onEntriesChange={setLexiconEntries}
                   user={user}
+                />
+              </TabsContent>
+
+              <TabsContent value="phrases" className="mt-6">
+                <SamplePhrasesTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  lexiconEntries={lexiconEntries}
+                  seed={currentLanguage.seed || 0}
+                  onAddToLexicon={(entries) => {
+                    const newEntries = entries.map((e, i) => ({
+                      id: `temp-phrase-${Date.now()}-${i}`,
+                      language_id: currentLanguage.id || '',
+                      gloss: e.gloss,
+                      part_of_speech: null,
+                      phonemic_form: e.phonemic,
+                      orthographic_form: e.orthographic,
+                      tags: [],
+                      notes: 'Added from Sample Phrases',
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    }))
+                    setLexiconEntries(prev => [...prev, ...newEntries])
+                    setActiveTab('lexicon')
+                  }}
                 />
               </TabsContent>
             </Tabs>

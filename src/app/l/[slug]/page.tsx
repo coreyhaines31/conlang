@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { LexiconEntry } from '@/lib/supabase/types'
+import { CopyLanguageButton } from '@/components/CopyLanguageButton'
+import Link from 'next/link'
 
 interface PageProps {
   params: Promise<{
@@ -31,9 +33,27 @@ export default async function PublicLanguagePage({ params }: PageProps) {
     .eq('language_id', language.id)
     .order('gloss', { ascending: true })
 
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Check if user owns this language
+  const isOwner = user && language.user_id === user.id
+
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4 space-y-6">
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between">
+          <Link 
+            href="/" 
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Editor
+          </Link>
+          {!isOwner && (
+            <CopyLanguageButton languageId={language.id} user={user} />
+          )}
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl">{language.name}</CardTitle>
@@ -44,15 +64,15 @@ export default async function PublicLanguagePage({ params }: PageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold mb-2">Seed</h3>
+                <h3 className="font-semibold mb-2 text-sm text-muted-foreground">Seed</h3>
                 <code className="text-sm bg-secondary px-2 py-1 rounded">
                   {language.seed}
                 </code>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Generator Version</h3>
+                <h3 className="font-semibold mb-2 text-sm text-muted-foreground">Generator Version</h3>
                 <code className="text-sm bg-secondary px-2 py-1 rounded">
                   {language.generator_version}
                 </code>
@@ -60,6 +80,47 @@ export default async function PublicLanguagePage({ params }: PageProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Phonology Summary */}
+        {(language.definition as any)?.phonology && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Phonology</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Consonants</h4>
+                <div className="flex flex-wrap gap-2">
+                  {((language.definition as any).phonology.consonants as string[])?.map(
+                    (c: string, i: number) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-secondary text-secondary-foreground rounded font-mono text-sm"
+                      >
+                        {c}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Vowels</h4>
+                <div className="flex flex-wrap gap-2">
+                  {((language.definition as any).phonology.vowels as string[])?.map(
+                    (v: string, i: number) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-secondary text-secondary-foreground rounded font-mono text-sm"
+                      >
+                        {v}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {(language.definition as any)?.sampleWords && (
           <Card>
@@ -72,7 +133,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
                   (word: string, i: number) => (
                     <span
                       key={i}
-                      className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md"
+                      className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md font-mono"
                     >
                       {word}
                     </span>
@@ -133,6 +194,23 @@ export default async function PublicLanguagePage({ params }: PageProps) {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Footer CTA for non-owners */}
+        {!isOwner && (
+          <Card className="bg-secondary/50">
+            <CardContent className="py-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold">Like this language?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Copy it to your account to customize and expand it.
+                  </p>
+                </div>
+                <CopyLanguageButton languageId={language.id} user={user} />
+              </div>
             </CardContent>
           </Card>
         )}
