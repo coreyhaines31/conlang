@@ -108,46 +108,12 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
   const lockedCount = generatedWords.filter(w => w.locked).length
   const favoriteCount = generatedWords.filter(w => w.favorite).length
 
+  const randomizeSeed = () => {
+    onUpdate({ ...language, seed: Math.floor(Math.random() * 2147483647) })
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>Core language settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Seed</Label>
-            <Input
-              type="number"
-              value={language.seed || 0}
-              onChange={(e) =>
-                onUpdate({ ...language, seed: parseInt(e.target.value) || 0 })
-              }
-              placeholder="Random seed for generation"
-            />
-            <p className="text-xs text-muted-foreground">
-              Same seed + definition = same generated words
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Generator Version</Label>
-            <Input
-              type="text"
-              value={language.generator_version || '1.0.0'}
-              onChange={(e) =>
-                onUpdate({ ...language, generator_version: e.target.value })
-              }
-              placeholder="1.0.0"
-            />
-            <p className="text-xs text-muted-foreground">
-              Version of the generator algorithm used
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Word Generation</CardTitle>
@@ -263,6 +229,53 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
           )}
         </CardContent>
       </Card>
+
+      {/* Advanced Settings - Collapsed by default */}
+      <details className="group">
+        <summary className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+          <span className="group-open:rotate-90 transition-transform">▶</span>
+          Advanced Settings
+        </summary>
+        <Card className="mt-3">
+          <CardContent className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Generation Seed</Label>
+                <Button variant="outline" size="sm" onClick={randomizeSeed}>
+                  🎲 Randomize
+                </Button>
+              </div>
+              <Input
+                type="number"
+                value={language.seed || 0}
+                onChange={(e) =>
+                  onUpdate({ ...language, seed: parseInt(e.target.value) || 0 })
+                }
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Controls randomization. Same seed = same generated words. Share this number to let others reproduce your results.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Generator Version</Label>
+              <Input
+                type="text"
+                value={language.generator_version || '1.0.0'}
+                onChange={(e) =>
+                  onUpdate({ ...language, generator_version: e.target.value })
+                }
+                disabled
+                className="font-mono text-sm bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                Algorithm version (for compatibility). Don't change this.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </details>
     </div>
   )
 }
