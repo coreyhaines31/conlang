@@ -509,7 +509,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             {/* Only show header name when not in onboarding mode */}
             {(() => {
               const def = (currentLanguage.definition || {}) as LanguageDefinition
-              const hasPhonology = def.phonology?.consonants?.length > 0 || def.phonology?.vowels?.length > 0
+              const hasPhonology = (def.phonology?.consonants?.length ?? 0) > 0 || (def.phonology?.vowels?.length ?? 0) > 0
               const isOnboarding = activeTab === 'overview' && !hasPhonology
               
               if (isOnboarding) return null

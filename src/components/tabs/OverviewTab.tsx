@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Language } from '@/lib/supabase/types'
+import { Language, Json } from '@/lib/supabase/types'
 import { LanguageDefinition, generateWords } from '@/lib/generator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -50,28 +50,29 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   const definition = (language.definition || {}) as LanguageDefinition
-  const hasPhonology = definition.phonology?.consonants?.length > 0 || definition.phonology?.vowels?.length > 0
+  const hasPhonology = (definition.phonology?.consonants?.length ?? 0) > 0 || (definition.phonology?.vowels?.length ?? 0) > 0
   const hasName = !!language.name
 
   const handleApplyPreset = (presetId: string) => {
     const preset = PHONOLOGY_PRESETS.find(p => p.id === presetId)
     if (preset) {
       setSelectedPreset(presetId)
+      const newDefinition = {
+        ...definition,
+        phonology: {
+          consonants: preset.phonology.consonants,
+          vowels: preset.phonology.vowels,
+        },
+        phonotactics: {
+          syllableTemplates: preset.phonotactics.syllableTemplates.map(t => 
+            typeof t === 'string' ? t : t.template
+          ),
+          forbiddenSequences: preset.phonotactics.forbiddenSequences,
+        },
+      }
       onUpdate({
         ...language,
-        definition: {
-          ...definition,
-          phonology: {
-            consonants: preset.phonology.consonants,
-            vowels: preset.phonology.vowels,
-          },
-          phonotactics: {
-            syllableTemplates: preset.phonotactics.syllableTemplates.map(t => 
-              typeof t === 'string' ? t : t.template
-            ),
-            forbiddenSequences: preset.phonotactics.forbiddenSequences,
-          },
-        },
+        definition: newDefinition as unknown as Json,
       })
     }
   }
