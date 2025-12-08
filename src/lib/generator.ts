@@ -162,6 +162,8 @@ export interface NameGeneratorConfig {
   descriptorSuffix?: string[]   // Descriptors like "the Great", "of the North"
 }
 
+import { WritingSystem } from './script'
+
 export interface LanguageDefinition {
   phonology?: Phonology
   phonotactics?: Phonotactics
@@ -169,6 +171,7 @@ export interface LanguageDefinition {
   phonologicalRules?: PhonologicalRule[]
   generationStyle?: GenerationStyle
   nameGenerators?: NameGeneratorConfig[]
+  writingSystem?: WritingSystem
 }
 
 /**

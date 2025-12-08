@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { LexiconEntry } from '@/lib/supabase/types'
 import { CopyLanguageButton } from '@/components/CopyLanguageButton'
+import { ScriptPreview } from '@/components/ScriptPreview'
+import { WritingSystem } from '@/lib/script'
 import Link from 'next/link'
 
 interface PageProps {
@@ -139,6 +141,55 @@ export default async function PublicLanguagePage({ params }: PageProps) {
                     </span>
                   )
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Writing System / Script */}
+        {(language.definition as any)?.writingSystem?.glyphs?.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Writing System</CardTitle>
+              <CardDescription>
+                {(language.definition as any).writingSystem.name} - 
+                {(language.definition as any).writingSystem.glyphs.length} glyphs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Sample text in script */}
+              {(language.definition as any)?.sampleWords && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Sample in Script</h4>
+                  <div className="border rounded-lg p-4 bg-secondary/20">
+                    <ScriptPreview
+                      text={((language.definition as any).sampleWords as string[]).slice(0, 5).join(' ')}
+                      writingSystem={(language.definition as any).writingSystem as WritingSystem}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Glyph inventory */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Glyph Inventory</h4>
+                <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                  {((language.definition as any).writingSystem.glyphs as any[]).map((glyph: any) => (
+                    <div
+                      key={glyph.id}
+                      className="p-2 border rounded text-center"
+                      title={glyph.name}
+                    >
+                      <div
+                        className="w-8 h-8 mx-auto"
+                        dangerouslySetInnerHTML={{ __html: glyph.svg }}
+                      />
+                      <div className="text-xs text-muted-foreground mt-1 font-mono">
+                        {glyph.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

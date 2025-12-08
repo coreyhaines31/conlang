@@ -29,6 +29,7 @@ import { LexiconTab } from './tabs/LexiconTab'
 import { SamplePhrasesTab } from './tabs/SamplePhrasesTab'
 import { StyleTab } from './tabs/StyleTab'
 import { NamesTab } from './tabs/NamesTab'
+import { ScriptTab } from './tabs/ScriptTab'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -438,6 +439,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="phrases">Phrases</TabsTrigger>
                 <TabsTrigger value="style">Style</TabsTrigger>
                 <TabsTrigger value="names">Names</TabsTrigger>
+                <TabsTrigger value="script">Script</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -551,6 +553,13 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                     setLexiconEntries(prev => [...prev, ...newEntries])
                     setActiveTab('lexicon')
                   }}
+                />
+              </TabsContent>
+
+              <TabsContent value="script" className="mt-6">
+                <ScriptTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
                 />
               </TabsContent>
             </Tabs>
