@@ -50,11 +50,11 @@ const EMPTY_LANGUAGE: Partial<Language> = {
   generator_version: '1.0.0',
   definition: {
     phonology: {
-      consonants: ['p', 't', 'k', 'b', 'd', 'g', 'm', 'n', 's', 'l', 'r'],
-      vowels: ['a', 'e', 'i', 'o', 'u'],
+      consonants: [],
+      vowels: [],
     },
     phonotactics: {
-      syllableTemplates: ['CV', 'CVC'],
+      syllableTemplates: [],
       forbiddenSequences: [],
     },
     orthography: {
@@ -502,35 +502,47 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       <div className="flex-1 overflow-y-auto p-6">
         {currentLanguage ? (
           <div className="space-y-4 max-w-5xl">
-            <div>
-              <Input
-                type="text"
-                value={currentLanguage.name || ''}
-                onChange={(e) =>
-                  setCurrentLanguage(prev => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Language Name"
-                className="text-2xl font-bold border-none shadow-none px-0 h-auto"
-              />
-              {currentLanguage.slug && currentLanguage.is_public && typeof window !== 'undefined' && (
-                <div className="text-sm text-muted-foreground mt-1">
-                  <a
-                    href={`/l/${currentLanguage.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    {window.location.origin}/l/{currentLanguage.slug}
-                  </a>
+            {/* Only show header name when not in onboarding mode */}
+            {(() => {
+              const def = (currentLanguage.definition || {}) as LanguageDefinition
+              const hasPhonology = def.phonology?.consonants?.length > 0 || def.phonology?.vowels?.length > 0
+              const isOnboarding = activeTab === 'overview' && !hasPhonology
+              
+              if (isOnboarding) return null
+              
+              return (
+                <div>
+                  <Input
+                    type="text"
+                    value={currentLanguage.name || ''}
+                    onChange={(e) =>
+                      setCurrentLanguage(prev => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="Language Name"
+                    className="text-2xl font-bold border-none shadow-none px-0 h-auto"
+                  />
+                  {currentLanguage.slug && currentLanguage.is_public && typeof window !== 'undefined' && (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <a
+                        href={`/l/${currentLanguage.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {window.location.origin}/l/{currentLanguage.slug}
+                      </a>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              )
+            })()}
 
             {/* Tab Content */}
             {activeTab === 'overview' && (
               <OverviewTab
                 language={currentLanguage}
                 onUpdate={setCurrentLanguage}
+                onNavigate={setActiveTab}
                 onAddToLexicon={
                   user && currentLanguage.id
                     ? async (words) => {
