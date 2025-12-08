@@ -383,12 +383,52 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Left Sidebar - Languages & Actions */}
-      <div className="w-56 border-r bg-card p-3 flex flex-col">
-        <div className="mb-3 space-y-2">
+      {/* Single Left Sidebar */}
+      <div className="w-64 border-r bg-card flex flex-col">
+        {/* Header */}
+        <div className="p-3 border-b space-y-2">
           <Button onClick={handleNewLanguage} className="w-full" size="sm">
-            New Language
+            + New Language
           </Button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto p-3">
+          <EditorNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {/* My Languages */}
+          {user && languages.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <h3 className="font-semibold mb-2 text-xs text-muted-foreground uppercase tracking-wide px-2">
+                My Languages
+              </h3>
+              <div className="space-y-1">
+                {languages.map(lang => (
+                  <Button
+                    key={lang.id}
+                    onClick={() => handleSelectLanguage(lang)}
+                    variant={currentLanguage?.id === lang.id ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className={cn(
+                      'w-full justify-start h-auto py-1.5 px-2',
+                      currentLanguage?.id === lang.id && 'bg-secondary'
+                    )}
+                  >
+                    <div className="flex flex-col items-start w-full">
+                      <div className="font-medium text-sm truncate w-full">{lang.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {lang.is_public ? '🌐 Public' : '🔒 Private'}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-3 border-t space-y-2 bg-muted/30">
           <div className="flex gap-1">
             <Button onClick={handleImport} variant="outline" className="flex-1 text-xs" size="sm">
               Import
@@ -403,38 +443,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               Export
             </Button>
           </div>
-        </div>
 
-        {user && languages.length > 0 && (
-          <div className="flex-1 overflow-y-auto mb-3">
-            <h3 className="font-semibold mb-2 text-xs text-muted-foreground uppercase tracking-wide">
-              My Languages
-            </h3>
-            <div className="space-y-1">
-              {languages.map(lang => (
-                <Button
-                  key={lang.id}
-                  onClick={() => handleSelectLanguage(lang)}
-                  variant={currentLanguage?.id === lang.id ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className={cn(
-                    'w-full justify-start h-auto py-1.5 px-2',
-                    currentLanguage?.id === lang.id && 'bg-secondary'
-                  )}
-                >
-                  <div className="flex flex-col items-start w-full">
-                    <div className="font-medium text-sm truncate w-full">{lang.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {lang.is_public ? '🌐 Public' : '🔒 Private'}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2 pt-3 border-t mt-auto">
           <div className="flex gap-1">
             <Button
               onClick={handleSaveToLocal}
@@ -443,7 +452,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               variant="outline"
               size="sm"
             >
-              Save Local
+              Local
             </Button>
             <Button
               onClick={handleSaveToAccount}
@@ -457,25 +466,23 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           </div>
 
           {user && currentLanguage?.id && (
-            <>
-              <div className="flex gap-1">
-                <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm">
-                  {currentLanguage.is_public ? '🔒' : '🌐'}
-                </Button>
-                <ShareDialog
-                  languageSlug={currentLanguage.slug || null}
-                  languageName={currentLanguage.name || 'My Language'}
-                  isPublic={currentLanguage.is_public || false}
-                  onTogglePublic={handleTogglePublic}
-                />
-                <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm">
-                  📋
-                </Button>
-                <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive">
-                  🗑️
-                </Button>
-              </div>
-            </>
+            <div className="flex gap-1">
+              <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm" title={currentLanguage.is_public ? 'Make Private' : 'Make Public'}>
+                {currentLanguage.is_public ? '🔒' : '🌐'}
+              </Button>
+              <ShareDialog
+                languageSlug={currentLanguage.slug || null}
+                languageName={currentLanguage.name || 'My Language'}
+                isPublic={currentLanguage.is_public || false}
+                onTogglePublic={handleTogglePublic}
+              />
+              <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm" title="Duplicate">
+                📋
+              </Button>
+              <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive" title="Delete">
+                🗑️
+              </Button>
+            </div>
           )}
 
           {user ? (
@@ -488,11 +495,6 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             </div>
           )}
         </div>
-      </div>
-
-      {/* Middle Navigation - Categories */}
-      <div className="w-48 border-r bg-muted/30 p-3 overflow-y-auto">
-        <EditorNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
       {/* Main Editor */}
