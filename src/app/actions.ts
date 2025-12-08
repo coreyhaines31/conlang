@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { Language, LexiconEntry } from '@/lib/supabase/types'
+import { Language, LexiconEntry, Snapshot, Preset, CommunityPhrasePack } from '@/lib/supabase/types'
 
 export async function saveLanguage(
   name: string,
@@ -335,4 +335,315 @@ export async function copyPublicLanguage(languageId: string): Promise<Language |
 
   revalidatePath('/')
   return data
+}
+
+// ===== SNAPSHOTS (VERSION HISTORY) =====
+
+export async function createSnapshot(
+  languageId: string,
+  name?: string,
+  description?: string
+): Promise<Snapshot | null> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get current language definition
+  const { data: language } = await supabase
+    .from('languages')
+    .select('definition')
+    .eq('id', languageId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!language) throw new Error('Language not found')
+
+  // Count lexicon entries
+  const { count } = await supabase
+    .from('lexicon_entries')
+    .select('*', { count: 'exact', head: true })
+    .eq('language_id', languageId)
+
+  const { data, error } = await supabase
+    .from('snapshots')
+    .insert({
+      language_id: languageId,
+      name: name || null,
+      description: description || null,
+      definition: language.definition,
+      lexicon_count: count || 0,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  revalidatePath('/')
+  return data
+}
+
+export async function getSnapshots(languageId: string): Promise<Snapshot[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('snapshots')
+    .select('*')
+    .eq('language_id', languageId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function deleteSnapshot(id: string): Promise<boolean> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('snapshots')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+
+  revalidatePath('/')
+  return true
+}
+
+export async function restoreSnapshot(snapshotId: string): Promise<Language | null> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get the snapshot
+  const { data: snapshot, error: snapshotError } = await supabase
+    .from('snapshots')
+    .select('*')
+    .eq('id', snapshotId)
+    .single()
+
+  if (snapshotError || !snapshot) throw new Error('Snapshot not found')
+
+  // Update the language definition
+  const { data, error } = await supabase
+    .from('languages')
+    .update({
+      definition: snapshot.definition,
+    })
+    .eq('id', snapshot.language_id)
+    .eq('user_id', user.id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  revalidatePath('/')
+  return data
+}
+
+// ===== PRESETS (MARKETPLACE) =====
+
+export async function createPreset(
+  type: 'phonology' | 'phonotactics' | 'morphology' | 'full',
+  name: string,
+  description: string,
+  content: any,
+  tags?: string[]
+): Promise<Preset | null> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('presets')
+    .insert({
+      user_id: user.id,
+      type,
+      name,
+      description,
+      content,
+      tags: tags || [],
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  revalidatePath('/presets')
+  return data
+}
+
+export async function getPresets(
+  type?: 'phonology' | 'phonotactics' | 'morphology' | 'full',
+  limit?: number
+): Promise<Preset[]> {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('presets')
+    .select('*')
+    .eq('is_public', true)
+    .order('downloads', { ascending: false })
+
+  if (type) {
+    query = query.eq('type', type)
+  }
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw error
+  return data || []
+}
+
+export async function getMyPresets(): Promise<Preset[]> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('presets')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function deletePreset(id: string): Promise<boolean> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('presets')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+
+  revalidatePath('/presets')
+  return true
+}
+
+// ===== COMMUNITY PHRASE PACKS =====
+
+export async function createCommunityPhrasePack(
+  name: string,
+  description: string,
+  category: string,
+  phrases: any[],
+  tags?: string[]
+): Promise<CommunityPhrasePack | null> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('community_phrase_packs')
+    .insert({
+      user_id: user.id,
+      name,
+      description,
+      category,
+      phrases,
+      tags: tags || [],
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  revalidatePath('/phrase-packs')
+  return data
+}
+
+export async function getCommunityPhrasePacks(
+  category?: string,
+  limit?: number
+): Promise<CommunityPhrasePack[]> {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('community_phrase_packs')
+    .select('*')
+    .eq('is_public', true)
+    .order('downloads', { ascending: false })
+
+  if (category) {
+    query = query.eq('category', category)
+  }
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw error
+  return data || []
+}
+
+export async function getMyCommunityPhrasePacks(): Promise<CommunityPhrasePack[]> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('community_phrase_packs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function deleteCommunityPhrasePack(id: string): Promise<boolean> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('community_phrase_packs')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+
+  revalidatePath('/phrase-packs')
+  return true
+}
+
+// ===== SHARE LINK GENERATION =====
+
+export async function getShareUrl(languageId: string): Promise<string | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('languages')
+    .select('slug, is_public')
+    .eq('id', languageId)
+    .single()
+
+  if (error || !data) return null
+  if (!data.is_public) return null
+
+  return `/l/${data.slug}`
 }

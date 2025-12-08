@@ -31,6 +31,11 @@ import { StyleTab } from './tabs/StyleTab'
 import { NamesTab } from './tabs/NamesTab'
 import { ScriptTab } from './tabs/ScriptTab'
 import { MorphologyTab } from './tabs/MorphologyTab'
+import { VersionHistoryTab } from './tabs/VersionHistoryTab'
+import { PresetBrowser } from './PresetBrowser'
+import { ShareDialog } from './ShareDialog'
+import { CommunityPhrasesTab } from './tabs/CommunityPhrasesTab'
+import { Preset } from '@/lib/supabase/types'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -304,6 +309,36 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }))
   }
 
+  const handleApplyPreset = (preset: Preset) => {
+    if (!currentLanguage) return
+
+    const content = preset.content as any
+    
+    switch (preset.type) {
+      case 'phonology':
+        updateDefinition({ phonology: content })
+        break
+      case 'phonotactics':
+        updateDefinition({ phonotactics: content })
+        break
+      case 'morphology':
+        updateDefinition({ morphology: content })
+        break
+      case 'full':
+        // Apply all parts of the preset
+        setCurrentLanguage(prev => ({
+          ...prev,
+          definition: {
+            ...(prev?.definition as LanguageDefinition),
+            ...content,
+          },
+        }))
+        break
+    }
+    
+    setActiveTab('overview')
+  }
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -373,9 +408,17 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
           {user && currentLanguage?.id && (
             <>
-              <Button onClick={handleTogglePublic} className="w-full" variant="outline">
-                {currentLanguage.is_public ? 'Make Private' : 'Make Public'}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleTogglePublic} className="flex-1" variant="outline">
+                  {currentLanguage.is_public ? 'Private' : 'Public'}
+                </Button>
+                <ShareDialog
+                  languageSlug={currentLanguage.slug || null}
+                  languageName={currentLanguage.name || 'My Language'}
+                  isPublic={currentLanguage.is_public || false}
+                  onTogglePublic={handleTogglePublic}
+                />
+              </div>
               <Button onClick={handleDuplicate} disabled={saving} className="w-full" variant="outline">
                 {saving ? 'Duplicating...' : 'Duplicate'}
               </Button>
@@ -442,6 +485,9 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="names">Names</TabsTrigger>
                 <TabsTrigger value="script">Script</TabsTrigger>
                 <TabsTrigger value="grammar">Grammar</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="presets">Presets</TabsTrigger>
+                <TabsTrigger value="community">Community</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -569,6 +615,28 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <MorphologyTab
                   definition={(currentLanguage.definition || {}) as LanguageDefinition}
                   onUpdate={updateDefinition}
+                />
+              </TabsContent>
+
+              <TabsContent value="history" className="mt-6">
+                <VersionHistoryTab
+                  languageId={currentLanguage.id || null}
+                  isAuthenticated={!!user}
+                  onRestore={() => window.location.reload()}
+                />
+              </TabsContent>
+
+              <TabsContent value="presets" className="mt-6">
+                <PresetBrowser
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  isAuthenticated={!!user}
+                  onApplyPreset={handleApplyPreset}
+                />
+              </TabsContent>
+
+              <TabsContent value="community" className="mt-6">
+                <CommunityPhrasesTab
+                  isAuthenticated={!!user}
                 />
               </TabsContent>
             </Tabs>

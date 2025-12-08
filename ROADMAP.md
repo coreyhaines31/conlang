@@ -166,18 +166,30 @@
 
 ---
 
-## Phase 7 — Collaboration + ecosystem (Weeks 16–20)
+## Phase 7 — Collaboration + ecosystem (Weeks 16–20) ✅
 
 ### User Stories
-- [ ] As a user, I can share languages with friends and iterate.
-- [ ] As a user, I can remix someone's public language into my own.
-- [ ] As a user, I can publish language "kits" (packs/presets).
+- [x] As a user, I can share languages with friends and iterate.
+- [x] As a user, I can remix someone's public language into my own.
+- [x] As a user, I can publish language "kits" (packs/presets).
 
 ### Features
-- [ ] Share link with "Duplicate" flow
-- [ ] Version history (lightweight: snapshots)
-- [ ] Preset marketplace (curated or community)
-- [ ] Community phrase packs
+- [x] Share link with "Duplicate" flow
+  - ShareDialog component with social sharing (Twitter/X, Reddit)
+  - One-click copy URL
+  - Public/Private toggle
+- [x] Version history (lightweight: snapshots)
+  - Create named snapshots with descriptions
+  - Restore previous versions
+  - Track lexicon count at snapshot time
+- [x] Preset marketplace (curated or community)
+  - Browse presets by type (phonology, phonotactics, morphology, full)
+  - Publish your own presets with tags
+  - Download counter and official badge support
+- [x] Community phrase packs
+  - Browse and create custom phrase packs
+  - Support for multiple phrase formats
+  - Category filtering (everyday, fantasy, scifi, custom)
 
 ---
 
@@ -201,5 +213,6 @@
 **Phase 4**: ✅ Complete  
 **Phase 5**: ✅ Complete  
 **Phase 6**: ✅ Complete  
-**Phase 7-8**: ⏳ Not started
+**Phase 7**: ✅ Complete  
+**Phase 8**: ⏳ Not started
 
