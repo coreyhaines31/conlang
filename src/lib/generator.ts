@@ -163,6 +163,7 @@ export interface NameGeneratorConfig {
 }
 
 import { WritingSystem } from './script'
+import { MorphologyConfig } from './morphology'
 
 export interface LanguageDefinition {
   phonology?: Phonology
@@ -172,6 +173,7 @@ export interface LanguageDefinition {
   generationStyle?: GenerationStyle
   nameGenerators?: NameGeneratorConfig[]
   writingSystem?: WritingSystem
+  morphology?: MorphologyConfig
 }
 
 /**

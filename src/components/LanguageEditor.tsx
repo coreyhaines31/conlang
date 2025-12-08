@@ -30,6 +30,7 @@ import { SamplePhrasesTab } from './tabs/SamplePhrasesTab'
 import { StyleTab } from './tabs/StyleTab'
 import { NamesTab } from './tabs/NamesTab'
 import { ScriptTab } from './tabs/ScriptTab'
+import { MorphologyTab } from './tabs/MorphologyTab'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -440,6 +441,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="style">Style</TabsTrigger>
                 <TabsTrigger value="names">Names</TabsTrigger>
                 <TabsTrigger value="script">Script</TabsTrigger>
+                <TabsTrigger value="grammar">Grammar</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -558,6 +560,13 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
               <TabsContent value="script" className="mt-6">
                 <ScriptTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                />
+              </TabsContent>
+
+              <TabsContent value="grammar" className="mt-6">
+                <MorphologyTab
                   definition={(currentLanguage.definition || {}) as LanguageDefinition}
                   onUpdate={updateDefinition}
                 />

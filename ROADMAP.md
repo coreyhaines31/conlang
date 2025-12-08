@@ -142,21 +142,27 @@
 
 ---
 
-## Phase 6 — Morphology + grammar "light" (Weeks 12–16)
+## Phase 6 — Morphology + grammar "light" (Weeks 12–16) ✅
 
 ### User Stories
-- [ ] As a user, I can define basic word-building rules (plural, tense, possession).
-- [ ] As a writer, phrase output starts looking grammatical, not just swapped words.
+- [x] As a user, I can define basic word-building rules (plural, tense, possession).
+- [x] As a writer, phrase output starts looking grammatical, not just swapped words.
 
 ### Features
-- [ ] Morphology basics:
-  - Prefixes/suffixes with meaning
-  - Compounding rules
-- [ ] Syntax toggles that affect phrase rendering:
-  - Word order (SVO/SOV/etc.)
-  - Adjective position
-  - Adpositions (pre/post)
-- [ ] Phrase templates that support roles (S/V/O) and simple transformations
+- [x] Morphology basics:
+  - Prefixes/suffixes with meaning (15+ grammatical categories: number, tense, aspect, mood, person, case, etc.)
+  - Preset affix packs: basic-number, basic-tense, basic-person, basic-possession, basic-case, derivational
+  - Compounding rules (noun-noun, adj-noun, verb-noun)
+  - Live test panel showing affix application
+- [x] Syntax toggles that affect phrase rendering:
+  - Word order (SVO/SOV/VSO/VOS/OSV/OVS/free)
+  - Adjective position (before/after noun)
+  - Adpositions (pre/post/circum)
+  - Plural marking, tense marking, question formation, negation position
+- [x] Phrase templates that support roles (S/V/O/ADJ/ADV/DET/PREP) and grammatical transformations
+- [x] Grammatical rendering mode in Sample Phrases tab
+  - Shows affix application breakdown
+  - Reorders words based on syntax settings
 
 ---
 
@@ -194,5 +200,6 @@
 **Phase 3**: ✅ Complete  
 **Phase 4**: ✅ Complete  
 **Phase 5**: ✅ Complete  
-**Phase 6-8**: ⏳ Not started
+**Phase 6**: ✅ Complete  
+**Phase 7-8**: ⏳ Not started
 

@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { LexiconEntry } from '@/lib/supabase/types'
 import { LanguageDefinition, generateWords } from '@/lib/generator'
-import { PHRASE_PACKS, Phrase, RenderedWord, RenderedPhrase } from '@/lib/phrases'
+import { PHRASE_PACKS, Phrase, RenderedWord, RenderedPhrase, GRAMMATICAL_PHRASES, GrammaticalPhrase } from '@/lib/phrases'
+import { transformPhrase, TransformedPhrase } from '@/lib/phraseTransformer'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -16,6 +17,8 @@ interface SamplePhrasesTabProps {
   onAddToLexicon?: (entries: Array<{ gloss: string; phonemic: string; orthographic: string }>) => void
 }
 
+type RenderMode = 'simple' | 'grammatical'
+
 export function SamplePhrasesTab({ 
   definition, 
   lexiconEntries, 
@@ -26,6 +29,8 @@ export function SamplePhrasesTab({
   const [showPhonemic, setShowPhonemic] = useState(true)
   const [showOrthographic, setShowOrthographic] = useState(true)
   const [selectedMissing, setSelectedMissing] = useState<Set<string>>(new Set())
+  const [renderMode, setRenderMode] = useState<RenderMode>('simple')
+  const [showAffixes, setShowAffixes] = useState(false)
 
   // Create a lookup map from gloss to lexicon entry
   const lexiconMap = useMemo(() => {
@@ -45,7 +50,7 @@ export function SamplePhrasesTab({
     return words[0] || { phonemic: gloss, orthographic: gloss }
   }
 
-  // Render a phrase with lexicon lookups and placeholders
+  // Render a phrase with lexicon lookups and placeholders (simple mode)
   const renderPhrase = (phrase: Phrase): RenderedPhrase => {
     const words: RenderedWord[] = []
     const missingGlosses: string[] = []
@@ -75,20 +80,44 @@ export function SamplePhrasesTab({
     return { phrase, words, missingGlosses }
   }
 
+  // Render grammatical phrases with morphology and syntax
+  const renderGrammaticalPhrase = (phrase: GrammaticalPhrase): TransformedPhrase => {
+    return transformPhrase(
+      phrase,
+      definition,
+      lexiconEntries,
+      (gloss) => generatePlaceholder(gloss, 0)
+    )
+  }
+
   const currentPack = PHRASE_PACKS.find(p => p.id === selectedPack) || PHRASE_PACKS[0]
+  
   const renderedPhrases = useMemo(() => 
     currentPack.phrases.map(renderPhrase),
     [currentPack, lexiconMap, seed, definition]
   )
 
+  const grammaticalPhrases = useMemo(() =>
+    GRAMMATICAL_PHRASES.map(renderGrammaticalPhrase),
+    [definition, lexiconEntries, seed]
+  )
+
   // Collect all unique missing glosses
   const allMissingGlosses = useMemo(() => {
     const missing = new Set<string>()
-    renderedPhrases.forEach(rp => {
-      rp.missingGlosses.forEach(g => missing.add(g.toLowerCase()))
-    })
+    if (renderMode === 'simple') {
+      renderedPhrases.forEach(rp => {
+        rp.missingGlosses.forEach(g => missing.add(g.toLowerCase()))
+      })
+    } else {
+      grammaticalPhrases.forEach(tp => {
+        tp.words.forEach(w => {
+          if (!w.isFromLexicon) missing.add(w.original.toLowerCase())
+        })
+      })
+    }
     return Array.from(missing).sort()
-  }, [renderedPhrases])
+  }, [renderedPhrases, grammaticalPhrases, renderMode])
 
   const toggleMissingSelection = (gloss: string) => {
     setSelectedMissing(prev => {
@@ -126,31 +155,67 @@ export function SamplePhrasesTab({
     setSelectedMissing(new Set())
   }
 
+  const hasMorphology = definition.morphology && 
+    (definition.morphology.affixes.length > 0 || definition.morphology.syntax)
+
   return (
     <div className="space-y-6">
-      {/* Pack Selection */}
+      {/* Mode Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Phrase Packs</CardTitle>
-          <CardDescription>Choose a theme to see sample phrases</CardDescription>
+          <CardTitle>Render Mode</CardTitle>
+          <CardDescription>Choose how phrases are rendered</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {PHRASE_PACKS.map(pack => (
-              <Button
-                key={pack.id}
-                variant={selectedPack === pack.id ? 'default' : 'outline'}
-                onClick={() => setSelectedPack(pack.id)}
-              >
-                {pack.name}
-              </Button>
-            ))}
+            <Button
+              variant={renderMode === 'simple' ? 'default' : 'outline'}
+              onClick={() => setRenderMode('simple')}
+            >
+              Simple (Word-by-word)
+            </Button>
+            <Button
+              variant={renderMode === 'grammatical' ? 'default' : 'outline'}
+              onClick={() => setRenderMode('grammatical')}
+              disabled={!hasMorphology}
+              title={!hasMorphology ? 'Add affixes in the Grammar tab first' : ''}
+            >
+              Grammatical (With morphology)
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {currentPack.description}
-          </p>
+          {renderMode === 'grammatical' && !hasMorphology && (
+            <p className="text-sm text-amber-600 mt-2">
+              Add affixes in the Grammar tab to enable grammatical rendering.
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      {/* Pack Selection (only for simple mode) */}
+      {renderMode === 'simple' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Phrase Packs</CardTitle>
+            <CardDescription>Choose a theme to see sample phrases</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {PHRASE_PACKS.map(pack => (
+                <Button
+                  key={pack.id}
+                  variant={selectedPack === pack.id ? 'default' : 'outline'}
+                  onClick={() => setSelectedPack(pack.id)}
+                >
+                  {pack.name}
+                </Button>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              {currentPack.description}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Display Options */}
       <Card>
@@ -175,63 +240,152 @@ export function SamplePhrasesTab({
               />
               <Label htmlFor="showOrthographic">Show Orthographic</Label>
             </div>
+            {renderMode === 'grammatical' && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="showAffixes"
+                  checked={showAffixes}
+                  onCheckedChange={(checked) => setShowAffixes(checked as boolean)}
+                />
+                <Label htmlFor="showAffixes">Show Applied Affixes</Label>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Rendered Phrases */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Phrases</CardTitle>
-          <CardDescription>
-            {renderedPhrases.length} phrases • 
-            {allMissingGlosses.length > 0 
-              ? ` ${allMissingGlosses.length} missing words (shown in italics)` 
-              : ' All words found in lexicon'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {renderedPhrases.map((rp, i) => (
-              <div key={rp.phrase.id} className="border-b pb-4 last:border-0 last:pb-0">
-                <div className="text-sm text-muted-foreground mb-1">
-                  {rp.phrase.english}
+      {/* Rendered Phrases - Simple Mode */}
+      {renderMode === 'simple' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Phrases</CardTitle>
+            <CardDescription>
+              {renderedPhrases.length} phrases • 
+              {allMissingGlosses.length > 0 
+                ? ` ${allMissingGlosses.length} missing words (shown in italics)` 
+                : ' All words found in lexicon'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {renderedPhrases.map((rp, i) => (
+                <div key={rp.phrase.id} className="border-b pb-4 last:border-0 last:pb-0">
+                  <div className="text-sm text-muted-foreground mb-1">
+                    {rp.phrase.english}
+                  </div>
+                  <div className="space-y-1">
+                    {showPhonemic && (
+                      <div className="font-mono">
+                        /{rp.words.map((w, j) => (
+                          <span 
+                            key={j} 
+                            className={w.isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
+                            title={w.isGenerated ? `Generated placeholder for "${w.gloss}"` : w.gloss}
+                          >
+                            {w.phonemic || '?'}
+                            {j < rp.words.length - 1 ? ' ' : ''}
+                          </span>
+                        ))}/
+                      </div>
+                    )}
+                    {showOrthographic && (
+                      <div className="font-mono text-lg">
+                        {rp.words.map((w, j) => (
+                          <span 
+                            key={j} 
+                            className={w.isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
+                            title={w.isGenerated ? `Generated placeholder for "${w.gloss}"` : w.gloss}
+                          >
+                            {w.orthographic || '?'}
+                            {j < rp.words.length - 1 ? ' ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {showPhonemic && (
-                    <div className="font-mono">
-                      /{rp.words.map((w, j) => (
-                        <span 
-                          key={j} 
-                          className={w.isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
-                          title={w.isGenerated ? `Generated placeholder for "${w.gloss}"` : w.gloss}
-                        >
-                          {w.phonemic || '?'}
-                          {j < rp.words.length - 1 ? ' ' : ''}
-                        </span>
-                      ))}/
-                    </div>
-                  )}
-                  {showOrthographic && (
-                    <div className="font-mono text-lg">
-                      {rp.words.map((w, j) => (
-                        <span 
-                          key={j} 
-                          className={w.isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
-                          title={w.isGenerated ? `Generated placeholder for "${w.gloss}"` : w.gloss}
-                        >
-                          {w.orthographic || '?'}
-                          {j < rp.words.length - 1 ? ' ' : ''}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rendered Phrases - Grammatical Mode */}
+      {renderMode === 'grammatical' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Grammatical Phrases</CardTitle>
+            <CardDescription>
+              Phrases with morphology and syntax rules applied
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {grammaticalPhrases.map((tp, i) => (
+                <div key={tp.original.id} className="border-b pb-4 last:border-0 last:pb-0">
+                  <div className="text-sm text-muted-foreground mb-1">
+                    {tp.original.english}
+                  </div>
+                  
+                  {/* Word breakdown */}
+                  {showAffixes && (
+                    <div className="text-xs text-muted-foreground mb-2 flex flex-wrap gap-2">
+                      {tp.words.map((w, j) => (
+                        <span key={j} className="bg-secondary px-2 py-1 rounded">
+                          <span className="font-medium">{w.original}</span>
+                          {w.affixesApplied.length > 0 && (
+                            <span className="ml-1 text-primary">
+                              +{w.affixesApplied.join(', ')}
+                            </span>
+                          )}
+                          <span className="ml-1">→ {w.transformed}</span>
                         </span>
                       ))}
                     </div>
                   )}
+                  
+                  <div className="space-y-1">
+                    {showPhonemic && (
+                      <div className="font-mono">
+                        /{tp.reordered.map((w, j) => {
+                          const word = tp.words.find(tw => tw.orthographic === w)
+                          const isGenerated = word ? !word.isFromLexicon : false
+                          return (
+                            <span 
+                              key={j} 
+                              className={isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
+                            >
+                              {word?.transformed || w}
+                              {j < tp.reordered.length - 1 ? ' ' : ''}
+                            </span>
+                          )
+                        })}/
+                      </div>
+                    )}
+                    {showOrthographic && (
+                      <div className="font-mono text-lg">
+                        {tp.reordered.map((w, j) => {
+                          const word = tp.words.find(tw => tw.orthographic === w)
+                          const isGenerated = word ? !word.isFromLexicon : false
+                          return (
+                            <span 
+                              key={j} 
+                              className={isGenerated ? 'italic text-amber-600 dark:text-amber-400' : ''}
+                            >
+                              {w}
+                              {j < tp.reordered.length - 1 ? ' ' : ''}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Missing Words */}
       {allMissingGlosses.length > 0 && onAddToLexicon && (
@@ -288,4 +442,3 @@ export function SamplePhrasesTab({
     </div>
   )
 }
-

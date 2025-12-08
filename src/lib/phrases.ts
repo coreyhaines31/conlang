@@ -101,6 +101,10 @@ export interface RenderedWord {
   phonemic: string | null
   orthographic: string | null
   isGenerated: boolean // true if word was auto-generated (not from lexicon)
+  grammaticalInfo?: {
+    role?: 'subject' | 'verb' | 'object' | 'adjective' | 'adverb' | 'other'
+    affixesApplied?: string[]
+  }
 }
 
 export interface RenderedPhrase {
@@ -108,4 +112,79 @@ export interface RenderedPhrase {
   words: RenderedWord[]
   missingGlosses: string[]
 }
+
+// Enhanced phrase pack with grammatical structure
+export interface GrammaticalPhrase {
+  id: string
+  english: string
+  structure: Array<{
+    gloss: string
+    role: 'S' | 'V' | 'O' | 'ADJ' | 'ADV' | 'DET' | 'PREP' | 'OTHER'
+    tense?: 'past' | 'present' | 'future'
+    number?: 'singular' | 'plural'
+    person?: '1st' | '2nd' | '3rd'
+    case?: 'nominative' | 'accusative' | 'dative' | 'genitive'
+  }>
+  category: string
+}
+
+// Sample grammatical phrases for testing morphology
+export const GRAMMATICAL_PHRASES: GrammaticalPhrase[] = [
+  {
+    id: 'g1',
+    english: 'The cat sees the dog',
+    structure: [
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'cat', role: 'S', number: 'singular', case: 'nominative' },
+      { gloss: 'see', role: 'V', tense: 'present', person: '3rd', number: 'singular' },
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'dog', role: 'O', number: 'singular', case: 'accusative' },
+    ],
+    category: 'basic'
+  },
+  {
+    id: 'g2',
+    english: 'I ate the food',
+    structure: [
+      { gloss: 'I', role: 'S', person: '1st', number: 'singular', case: 'nominative' },
+      { gloss: 'eat', role: 'V', tense: 'past', person: '1st', number: 'singular' },
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'food', role: 'O', number: 'singular', case: 'accusative' },
+    ],
+    category: 'basic'
+  },
+  {
+    id: 'g3',
+    english: 'The warriors will fight',
+    structure: [
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'warrior', role: 'S', number: 'plural', case: 'nominative' },
+      { gloss: 'fight', role: 'V', tense: 'future', person: '3rd', number: 'plural' },
+    ],
+    category: 'fantasy'
+  },
+  {
+    id: 'g4',
+    english: 'You speak to the king',
+    structure: [
+      { gloss: 'you', role: 'S', person: '2nd', number: 'singular', case: 'nominative' },
+      { gloss: 'speak', role: 'V', tense: 'present', person: '2nd', number: 'singular' },
+      { gloss: 'to', role: 'PREP' },
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'king', role: 'O', number: 'singular', case: 'dative' },
+    ],
+    category: 'formal'
+  },
+  {
+    id: 'g5',
+    english: 'The big house stands',
+    structure: [
+      { gloss: 'the', role: 'DET' },
+      { gloss: 'big', role: 'ADJ' },
+      { gloss: 'house', role: 'S', number: 'singular', case: 'nominative' },
+      { gloss: 'stand', role: 'V', tense: 'present', person: '3rd', number: 'singular' },
+    ],
+    category: 'descriptive'
+  }
+]
 
