@@ -27,6 +27,8 @@ import { PhonotacticsTab } from './tabs/PhonotacticsTab'
 import { OrthographyTab } from './tabs/OrthographyTab'
 import { LexiconTab } from './tabs/LexiconTab'
 import { SamplePhrasesTab } from './tabs/SamplePhrasesTab'
+import { StyleTab } from './tabs/StyleTab'
+import { NamesTab } from './tabs/NamesTab'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -434,6 +436,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <TabsTrigger value="orthography">Orthography</TabsTrigger>
                 <TabsTrigger value="lexicon">Lexicon</TabsTrigger>
                 <TabsTrigger value="phrases">Phrases</TabsTrigger>
+                <TabsTrigger value="style">Style</TabsTrigger>
+                <TabsTrigger value="names">Names</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -509,6 +513,38 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                       orthographic_form: e.orthographic,
                       tags: [],
                       notes: 'Added from Sample Phrases',
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    }))
+                    setLexiconEntries(prev => [...prev, ...newEntries])
+                    setActiveTab('lexicon')
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="style" className="mt-6">
+                <StyleTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                  seed={currentLanguage.seed || 0}
+                />
+              </TabsContent>
+
+              <TabsContent value="names" className="mt-6">
+                <NamesTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                  seed={currentLanguage.seed || 0}
+                  onAddToLexicon={(entries) => {
+                    const newEntries = entries.map((e, i) => ({
+                      id: `temp-name-${Date.now()}-${i}`,
+                      language_id: currentLanguage.id || '',
+                      gloss: e.gloss,
+                      part_of_speech: 'proper noun',
+                      phonemic_form: e.phonemic,
+                      orthographic_form: e.orthographic,
+                      tags: ['name'],
+                      notes: 'Generated name',
                       created_at: new Date().toISOString(),
                       updated_at: new Date().toISOString(),
                     }))
