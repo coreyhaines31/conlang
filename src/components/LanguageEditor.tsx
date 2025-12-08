@@ -2,32 +2,61 @@
 
 import { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
-import { Language } from '@/lib/supabase/types'
+import { Language, LexiconEntry } from '@/lib/supabase/types'
 import { AuthModal } from './auth/AuthModal'
 import { createClient } from '@/lib/supabase/client'
-import { saveLanguage, updateLanguage, createSlug } from '@/app/actions'
+import {
+  saveLanguage,
+  updateLanguage,
+  deleteLanguage,
+  createSlug,
+  getLexiconEntries,
+} from '@/app/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { generateWords, LanguageDefinition } from '@/lib/generator'
+import { OverviewTab } from './tabs/OverviewTab'
+import { PhonologyTab } from './tabs/PhonologyTab'
+import { PhonotacticsTab } from './tabs/PhonotacticsTab'
+import { OrthographyTab } from './tabs/OrthographyTab'
+import { LexiconTab } from './tabs/LexiconTab'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
   user: User | null
 }
 
-const EMPTY_LANGUAGE = {
+const EMPTY_LANGUAGE: Partial<Language> = {
   name: '',
-  definition: {},
+  seed: Math.floor(Math.random() * 2147483647),
+  generator_version: '1.0.0',
+  definition: {
+    phonology: {
+      consonants: ['p', 't', 'k', 'b', 'd', 'g', 'm', 'n', 's', 'l', 'r'],
+      vowels: ['a', 'e', 'i', 'o', 'u'],
+    },
+    phonotactics: {
+      syllableTemplates: ['CV', 'CVC'],
+      forbiddenSequences: [],
+    },
+    orthography: {
+      mappings: {},
+    },
+  },
 }
 
 export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) {
   const [languages, setLanguages] = useState(initialLanguages)
   const [currentLanguage, setCurrentLanguage] = useState<Partial<Language> | null>(null)
-  const [localDraft, setLocalDraft] = useState(EMPTY_LANGUAGE)
+  const [lexiconEntries, setLexiconEntries] = useState<LexiconEntry[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
   const supabase = createClient()
 
   // Load draft from localStorage on mount
@@ -36,32 +65,50 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (draft) {
       try {
         const parsed = JSON.parse(draft)
-        setLocalDraft(parsed)
-        if (!user && !currentLanguage) {
-          setCurrentLanguage(parsed)
-        }
+        setCurrentLanguage(parsed)
       } catch (e) {
         console.error('Failed to parse draft', e)
       }
     }
   }, [])
 
-  // Save to localStorage when draft changes
+  // Save to localStorage when draft changes (logged out only)
   useEffect(() => {
     if (!user && currentLanguage && !currentLanguage.id) {
       localStorage.setItem('languageDraft', JSON.stringify(currentLanguage))
     }
   }, [currentLanguage, user])
 
+  // Load lexicon entries when language changes
+  useEffect(() => {
+    if (currentLanguage?.id && user) {
+      getLexiconEntries(currentLanguage.id).then(setLexiconEntries).catch(console.error)
+    } else {
+      setLexiconEntries([])
+    }
+  }, [currentLanguage?.id, user])
+
   const handleNewLanguage = () => {
-    setCurrentLanguage(EMPTY_LANGUAGE)
+    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+    setActiveTab('overview')
   }
 
-  const handleSelectLanguage = (lang: Language) => {
+  const handleSelectLanguage = async (lang: Language) => {
     setCurrentLanguage(lang)
+    setActiveTab('overview')
+    if (user) {
+      const entries = await getLexiconEntries(lang.id)
+      setLexiconEntries(entries)
+    }
   }
 
-  const handleSave = async () => {
+  const handleSaveToLocal = () => {
+    if (!currentLanguage?.name) return
+    localStorage.setItem('languageDraft', JSON.stringify(currentLanguage))
+    alert('Saved to local storage!')
+  }
+
+  const handleSaveToAccount = async () => {
     if (!currentLanguage?.name) return
 
     // If not logged in, show auth modal
@@ -72,16 +119,22 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
     setSaving(true)
     try {
+      const definition = currentLanguage.definition as LanguageDefinition
+      const seed = currentLanguage.seed || Math.floor(Math.random() * 2147483647)
+      const generatorVersion = currentLanguage.generator_version || '1.0.0'
+
       if (currentLanguage.id) {
         // Update existing
         const updated = await updateLanguage(
           currentLanguage.id,
           currentLanguage.name,
-          currentLanguage.definition || {},
+          definition,
+          seed,
+          generatorVersion,
           currentLanguage.is_public || false
         )
         if (updated) {
-          setLanguages(prev => prev.map(l => l.id === updated.id ? updated : l))
+          setLanguages(prev => prev.map(l => (l.id === updated.id ? updated : l)))
           setCurrentLanguage(updated)
         }
       } else {
@@ -90,7 +143,9 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         const created = await saveLanguage(
           currentLanguage.name,
           slug,
-          currentLanguage.definition || {},
+          definition,
+          seed,
+          generatorVersion,
           false
         )
         if (created) {
@@ -101,13 +156,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       }
     } catch (error) {
       console.error('Save failed:', error)
+      alert('Failed to save: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
     setSaving(false)
   }
 
   const handleAuthSuccess = async () => {
-    // After auth, save the draft
     setShowAuthModal(false)
+    // After auth, try to save again
+    await handleSaveToAccount()
     window.location.reload() // Reload to get user session
   }
 
@@ -119,37 +176,108 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleTogglePublic = async () => {
     if (!currentLanguage?.id || !user) return
 
+    const definition = currentLanguage.definition as LanguageDefinition
+    const seed = currentLanguage.seed || Math.floor(Math.random() * 2147483647)
+    const generatorVersion = currentLanguage.generator_version || '1.0.0'
+
     const updated = await updateLanguage(
       currentLanguage.id,
       currentLanguage.name,
-      currentLanguage.definition || {},
+      definition,
+      seed,
+      generatorVersion,
       !currentLanguage.is_public
     )
     if (updated) {
-      setLanguages(prev => prev.map(l => l.id === updated.id ? updated : l))
+      setLanguages(prev => prev.map(l => (l.id === updated.id ? updated : l)))
       setCurrentLanguage(updated)
     }
   }
 
-  const generateWords = () => {
-    // Placeholder word generation
-    const syllables = ['ka', 'la', 'mi', 'no', 'pe', 'ri', 'su', 'ta', 'vo', 'ze']
-    const words = []
-    for (let i = 0; i < 10; i++) {
-      const syllableCount = Math.floor(Math.random() * 3) + 1
-      let word = ''
-      for (let j = 0; j < syllableCount; j++) {
-        word += syllables[Math.floor(Math.random() * syllables.length)]
-      }
-      words.push(word)
+  const handleDelete = async () => {
+    if (!currentLanguage?.id || !user) return
+    if (!confirm('Are you sure you want to delete this language?')) return
+
+    try {
+      await deleteLanguage(currentLanguage.id)
+      setLanguages(prev => prev.filter(l => l.id !== currentLanguage.id))
+      setCurrentLanguage(null)
+    } catch (error) {
+      console.error('Delete failed:', error)
+      alert('Failed to delete language')
+    }
+  }
+
+  const handleExport = () => {
+    if (!currentLanguage) return
+
+    const exportData = {
+      name: currentLanguage.name,
+      seed: currentLanguage.seed,
+      generator_version: currentLanguage.generator_version,
+      definition: currentLanguage.definition,
+      lexicon: lexiconEntries,
     }
 
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${currentLanguage.name || 'language'}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+
+      try {
+        const text = await file.text()
+        const data = JSON.parse(text)
+
+        if (user) {
+          // Import as new language
+          const imported: Partial<Language> = {
+            name: `${data.name} (Imported)`,
+            seed: data.seed || Math.floor(Math.random() * 2147483647),
+            generator_version: data.generator_version || '1.0.0',
+            definition: data.definition,
+          }
+          setCurrentLanguage(imported)
+          setActiveTab('overview')
+        } else {
+          // Import as local draft
+          const imported: Partial<Language> = {
+            name: data.name,
+            seed: data.seed || Math.floor(Math.random() * 2147483647),
+            generator_version: data.generator_version || '1.0.0',
+            definition: data.definition,
+          }
+          setCurrentLanguage(imported)
+          setActiveTab('overview')
+        }
+      } catch (error) {
+        console.error('Import failed:', error)
+        alert('Failed to import: Invalid JSON file')
+      }
+    }
+    input.click()
+  }
+
+  const updateDefinition = (updates: Partial<LanguageDefinition>) => {
     setCurrentLanguage(prev => ({
       ...prev,
       definition: {
-        ...prev?.definition,
-        sampleWords: words
-      }
+        ...(prev?.definition as LanguageDefinition),
+        ...updates,
+      },
     }))
   }
 
@@ -157,13 +285,23 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <div className="w-64 border-r bg-card p-4 flex flex-col">
-        <div className="mb-4">
-          <Button
-            onClick={handleNewLanguage}
-            className="w-full"
-          >
+        <div className="mb-4 space-y-2">
+          <Button onClick={handleNewLanguage} className="w-full">
             New Language
           </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleImport} variant="outline" className="flex-1 text-xs">
+              Import
+            </Button>
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              className="flex-1 text-xs"
+              disabled={!currentLanguage}
+            >
+              Export
+            </Button>
+          </div>
         </div>
 
         {user && (
@@ -174,10 +312,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <Button
                   key={lang.id}
                   onClick={() => handleSelectLanguage(lang)}
-                  variant={currentLanguage?.id === lang.id ? "secondary" : "ghost"}
+                  variant={currentLanguage?.id === lang.id ? 'secondary' : 'ghost'}
                   className={cn(
-                    "w-full justify-start h-auto py-2",
-                    currentLanguage?.id === lang.id && "bg-secondary"
+                    'w-full justify-start h-auto py-2',
+                    currentLanguage?.id === lang.id && 'bg-secondary'
                   )}
                 >
                   <div className="flex flex-col items-start w-full">
@@ -194,35 +332,40 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
         <div className="space-y-2 pt-4 border-t">
           <Button
-            onClick={handleSave}
+            onClick={handleSaveToLocal}
+            disabled={!currentLanguage?.name}
+            className="w-full"
+            variant="outline"
+          >
+            Save to Local
+          </Button>
+          <Button
+            onClick={handleSaveToAccount}
             disabled={saving || !currentLanguage?.name}
             className="w-full"
             variant="default"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : 'Save to Account'}
           </Button>
 
           {user && currentLanguage?.id && (
-            <Button
-              onClick={handleTogglePublic}
-              className="w-full"
-              variant="outline"
-            >
-              {currentLanguage.is_public ? 'Make Private' : 'Make Public'}
-            </Button>
+            <>
+              <Button onClick={handleTogglePublic} className="w-full" variant="outline">
+                {currentLanguage.is_public ? 'Make Private' : 'Make Public'}
+              </Button>
+              <Button onClick={handleDelete} className="w-full" variant="destructive">
+                Delete
+              </Button>
+            </>
           )}
 
           {user ? (
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              className="w-full text-sm"
-            >
+            <Button onClick={handleLogout} variant="ghost" className="w-full text-sm">
               Logout
             </Button>
           ) : (
             <div className="text-xs text-muted-foreground text-center">
-              Save to create account
+              Save to account to create account
             </div>
           )}
         </div>
@@ -230,58 +373,94 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
       {/* Main Editor */}
       <div className="flex-1 overflow-y-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Language Editor</h1>
-
         {currentLanguage ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Language Details</CardTitle>
-              <CardDescription>Edit your constructed language</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Language Name</label>
-                <Input
-                  type="text"
-                  value={currentLanguage.name || ''}
-                  onChange={(e) => setCurrentLanguage(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter language name"
-                />
-              </div>
-
+          <div className="space-y-6">
+            <div>
+              <Input
+                type="text"
+                value={currentLanguage.name || ''}
+                onChange={(e) =>
+                  setCurrentLanguage(prev => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Language Name"
+                className="text-2xl font-bold border-none shadow-none px-0"
+              />
               {currentLanguage.slug && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground mt-1">
                   {currentLanguage.is_public && typeof window !== 'undefined' && (
-                    <span>Public URL: {window.location.origin}/l/{currentLanguage.slug}</span>
+                    <span>
+                      Public URL:{' '}
+                      <a
+                        href={`/l/${currentLanguage.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {window.location.origin}/l/{currentLanguage.slug}
+                      </a>
+                    </span>
                   )}
                 </div>
               )}
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Definition (JSON)</label>
-                <Textarea
-                  value={JSON.stringify(currentLanguage.definition || {}, null, 2)}
-                  onChange={(e) => {
-                    try {
-                      const parsed = JSON.parse(e.target.value)
-                      setCurrentLanguage(prev => ({ ...prev, definition: parsed }))
-                    } catch {
-                      // Invalid JSON, just update the text
-                    }
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="phonology">Phonology</TabsTrigger>
+                <TabsTrigger value="phonotactics">Phonotactics</TabsTrigger>
+                <TabsTrigger value="orthography">Orthography</TabsTrigger>
+                <TabsTrigger value="lexicon">Lexicon</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="mt-6">
+                <OverviewTab
+                  language={currentLanguage}
+                  onUpdate={setCurrentLanguage}
+                  onGenerateWords={() => {
+                    const words = generateWords(
+                      currentLanguage.seed || 0,
+                      20,
+                      (currentLanguage.definition || {}) as LanguageDefinition
+                    )
+                    updateDefinition({
+                      sampleWords: words.map(w => w.orthographic),
+                    })
                   }}
-                  className="h-96 font-mono text-sm"
-                  placeholder="{}"
                 />
-              </div>
+              </TabsContent>
 
-              <Button
-                onClick={generateWords}
-                variant="outline"
-              >
-                Generate Words
-              </Button>
-            </CardContent>
-          </Card>
+              <TabsContent value="phonology" className="mt-6">
+                <PhonologyTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                />
+              </TabsContent>
+
+              <TabsContent value="phonotactics" className="mt-6">
+                <PhonotacticsTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                />
+              </TabsContent>
+
+              <TabsContent value="orthography" className="mt-6">
+                <OrthographyTab
+                  definition={(currentLanguage.definition || {}) as LanguageDefinition}
+                  onUpdate={updateDefinition}
+                />
+              </TabsContent>
+
+              <TabsContent value="lexicon" className="mt-6">
+                <LexiconTab
+                  languageId={currentLanguage.id}
+                  entries={lexiconEntries}
+                  onEntriesChange={setLexiconEntries}
+                  user={user}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         ) : (
           <Card>
             <CardContent className="py-12">

@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS languages (
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     is_public BOOLEAN NOT NULL DEFAULT false,
+    seed BIGINT NOT NULL DEFAULT floor(random() * 2147483647)::bigint,
+    generator_version TEXT NOT NULL DEFAULT '1.0.0',
     definition JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
