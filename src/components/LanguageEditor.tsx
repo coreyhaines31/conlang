@@ -71,17 +71,27 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const [activeTab, setActiveTab] = useState('overview')
   const supabase = createClient()
 
-  // Load draft from localStorage on mount
+  // Load draft from localStorage on mount, or create new language
   useEffect(() => {
     const draft = localStorage.getItem('languageDraft')
     if (draft) {
       try {
         const parsed = JSON.parse(draft)
         setCurrentLanguage(parsed)
+        return
       } catch (e) {
         console.error('Failed to parse draft', e)
       }
     }
+    
+    // If user has saved languages, select the first one
+    if (initialLanguages.length > 0) {
+      setCurrentLanguage(initialLanguages[0])
+      return
+    }
+    
+    // Otherwise, start with a fresh new language (no empty state)
+    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
   }, [])
 
   // Save to localStorage when draft changes (logged out only)
