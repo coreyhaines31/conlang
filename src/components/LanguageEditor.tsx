@@ -386,8 +386,12 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     <div className="flex h-screen bg-background">
       {/* Single Left Sidebar */}
       <div className="w-64 border-r bg-card flex flex-col">
-        {/* Header */}
-        <div className="p-3 border-b space-y-2">
+        {/* Logo & Header */}
+        <div className="p-4 border-b">
+          <a href="/" className="flex items-center gap-2 mb-3">
+            <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
+            <span className="font-semibold text-lg">Conlang</span>
+          </a>
           <Button onClick={handleNewLanguage} className="w-full" size="sm">
             + New Language
           </Button>

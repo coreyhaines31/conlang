@@ -52,9 +52,10 @@ export default async function PublicLanguagePage({ params }: PageProps) {
         <div className="flex items-center justify-between">
           <Link 
             href="/" 
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Back to Editor
+            <img src="/conlang-icon.svg" alt="Conlang" className="h-5 w-auto" />
+            <span>← Back to Editor</span>
           </Link>
           {!isOwner && (
             <CopyLanguageButton languageId={language.id} user={user} />
