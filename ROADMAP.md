@@ -96,22 +96,28 @@
 
 ---
 
-## Phase 4 — Make it feel real (Weeks 8–10)
+## Phase 4 — Make it feel real (Weeks 8–10) ✅
 
 ### User Stories
-- [ ] As a user, I can shape the "sound" beyond basic randomness.
-- [ ] As a user, my language has consistent flavor (patterns, harmony, constraints).
-- [ ] As a user, I can generate proper names/place names with a style.
+- [x] As a user, I can shape the "sound" beyond basic randomness.
+- [x] As a user, my language has consistent flavor (patterns, harmony, constraints).
+- [x] As a user, I can generate proper names/place names with a style.
 
 ### Features
-- [ ] Phonological rules (simple find/replace with context)
-- [ ] Style controls for generation:
-  - Preferred phonemes
+- [x] Phonological rules (simple find/replace with context)
+  - Presets: Voicing Assimilation, Final Devoicing, Back Vowel Harmony
+  - Custom rules with find/replace
+- [x] Style controls for generation:
+  - Preferred phonemes (+/- buttons per phoneme)
   - Avoid phonemes
   - Common endings/beginnings
-  - Syllable length distribution
-- [ ] Generators: people names, place names, faction names
-- [ ] "Favorites" and "lock word" behavior in previews
+  - Syllable length distribution (1-4 syllables)
+- [x] Generators: people names, place names, faction names
+  - Configurable title prefixes and descriptors
+  - Add generated names to lexicon
+- [x] "Favorites" and "lock word" behavior in previews
+  - ★ Favorite words for easy selection
+  - 🔒 Lock words to persist across regeneration
 
 ---
 
@@ -183,5 +189,6 @@
 **Phase 1**: ✅ Complete  
 **Phase 2**: ✅ Complete  
 **Phase 3**: ✅ Complete  
-**Phase 4-8**: ⏳ Not started
+**Phase 4**: ✅ Complete  
+**Phase 5-8**: ⏳ Not started
 

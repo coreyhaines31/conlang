@@ -13,6 +13,8 @@ interface GeneratedWord {
   phonemic: string
   orthographic: string
   selected: boolean
+  locked: boolean    // Locked words persist across regeneration
+  favorite: boolean  // Favorite words are highlighted
 }
 
 interface OverviewTabProps {
@@ -31,18 +33,49 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
     const newSeed = generationSeed + 1
     setGenerationSeed(newSeed)
     
-    const words = generateWords(
-      seed + newSeed,
-      wordCount,
-      (language.definition || {}) as LanguageDefinition
-    )
+    // Keep locked words
+    const lockedWords = generatedWords.filter(w => w.locked)
+    const newWordsNeeded = wordCount - lockedWords.length
     
-    setGeneratedWords(words.map(w => ({ ...w, selected: false })))
+    if (newWordsNeeded > 0) {
+      const words = generateWords(
+        seed + newSeed,
+        newWordsNeeded,
+        (language.definition || {}) as LanguageDefinition
+      )
+      
+      const newWords = words.map(w => ({ 
+        ...w, 
+        selected: false, 
+        locked: false, 
+        favorite: false 
+      }))
+      
+      // Combine locked words with new words
+      setGeneratedWords([...lockedWords, ...newWords])
+    } else {
+      // If we have more locked words than requested, just keep the locked ones
+      setGeneratedWords(lockedWords.slice(0, wordCount))
+    }
   }
 
   const toggleWordSelection = (index: number) => {
     setGeneratedWords(prev =>
       prev.map((w, i) => (i === index ? { ...w, selected: !w.selected } : w))
+    )
+  }
+
+  const toggleWordLock = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setGeneratedWords(prev =>
+      prev.map((w, i) => (i === index ? { ...w, locked: !w.locked } : w))
+    )
+  }
+
+  const toggleWordFavorite = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setGeneratedWords(prev =>
+      prev.map((w, i) => (i === index ? { ...w, favorite: !w.favorite } : w))
     )
   }
 
@@ -54,16 +87,26 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
     setGeneratedWords(prev => prev.map(w => ({ ...w, selected: false })))
   }
 
+  const selectFavorites = () => {
+    setGeneratedWords(prev => prev.map(w => ({ ...w, selected: w.favorite })))
+  }
+
+  const clearUnlocked = () => {
+    setGeneratedWords(prev => prev.filter(w => w.locked))
+  }
+
   const handleAddToLexicon = () => {
     const selected = generatedWords.filter(w => w.selected)
     if (selected.length > 0 && onAddToLexicon) {
       onAddToLexicon(selected.map(w => ({ phonemic: w.phonemic, orthographic: w.orthographic })))
-      // Remove added words from the list
-      setGeneratedWords(prev => prev.filter(w => !w.selected))
+      // Remove added words from the list (unless locked)
+      setGeneratedWords(prev => prev.filter(w => !w.selected || w.locked).map(w => ({ ...w, selected: false })))
     }
   }
 
   const selectedCount = generatedWords.filter(w => w.selected).length
+  const lockedCount = generatedWords.filter(w => w.locked).length
+  const favoriteCount = generatedWords.filter(w => w.favorite).length
 
   return (
     <div className="space-y-6">
@@ -128,19 +171,34 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
             <Button onClick={handleGenerate}>
               Generate
             </Button>
+            {lockedCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                ({lockedCount} locked)
+              </span>
+            )}
           </div>
 
           {generatedWords.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <Label>Generated Words ({generatedWords.length})</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button variant="ghost" size="sm" onClick={selectAll}>
                     Select All
                   </Button>
                   <Button variant="ghost" size="sm" onClick={selectNone}>
                     Select None
                   </Button>
+                  {favoriteCount > 0 && (
+                    <Button variant="ghost" size="sm" onClick={selectFavorites}>
+                      Select ★ ({favoriteCount})
+                    </Button>
+                  )}
+                  {lockedCount > 0 && generatedWords.length > lockedCount && (
+                    <Button variant="ghost" size="sm" onClick={clearUnlocked}>
+                      Clear Unlocked
+                    </Button>
+                  )}
                   {onAddToLexicon && selectedCount > 0 && (
                     <Button size="sm" onClick={handleAddToLexicon}>
                       Add {selectedCount} to Lexicon
@@ -155,7 +213,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
                     key={i}
                     className={`flex items-center gap-3 px-3 py-2 hover:bg-secondary/50 cursor-pointer ${
                       word.selected ? 'bg-secondary' : ''
-                    }`}
+                    } ${word.favorite ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}
                     onClick={() => toggleWordSelection(i)}
                   >
                     <Checkbox
@@ -172,13 +230,35 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon }: OverviewTabP
                         <span className="font-mono">{word.orthographic}</span>
                       </div>
                     </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => toggleWordFavorite(i, e)}
+                        className={`p-1 rounded hover:bg-secondary ${
+                          word.favorite ? 'text-amber-500' : 'text-muted-foreground'
+                        }`}
+                        title={word.favorite ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {word.favorite ? '★' : '☆'}
+                      </button>
+                      <button
+                        onClick={(e) => toggleWordLock(i, e)}
+                        className={`p-1 rounded hover:bg-secondary ${
+                          word.locked ? 'text-blue-500' : 'text-muted-foreground'
+                        }`}
+                        title={word.locked ? 'Unlock (will be replaced on regenerate)' : 'Lock (keep on regenerate)'}
+                      >
+                        {word.locked ? '🔒' : '🔓'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
               
-              <p className="text-xs text-muted-foreground">
-                Click words to select them, then add to your lexicon
-              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• Click words to select, then add to lexicon</p>
+                <p>• ★ Favorite words for easy selection later</p>
+                <p>• 🔒 Lock words to keep them when regenerating</p>
+              </div>
             </div>
           )}
         </CardContent>
