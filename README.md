@@ -2,18 +2,37 @@
 
 A single-page application for creating and sharing constructed languages, built with Next.js 16, TypeScript, Tailwind CSS v4, shadcn/ui, and Supabase.
 
+**Live at: [conlang.app](https://conlang.app)**
+
 ## Features
 
+### Core Features
 - **Anonymous Usage**: Start building languages immediately without signing up
 - **Local Draft Persistence**: Saves work locally in browser storage
 - **Auth on Demand**: Only requires login when saving to the cloud
 - **Multiple Languages**: Logged-in users can create and manage multiple languages
 - **Public Sharing**: Share languages publicly via unique URLs (`/l/[slug]`)
-- **Magic Link Auth**: Simple email-based authentication
 - **Deterministic Generation**: Seeded RNG ensures reproducible word generation
-- **Comprehensive Editor**: Tabs for Overview, Phonology, Phonotactics, Orthography, and Lexicon
-- **Import/Export**: JSON import/export for backup and sharing
-- **Lexicon Management**: Full CRUD for vocabulary entries
+
+### Language Building
+- **Phonology**: Define consonants and vowels with presets (airy, harsh, alien, etc.)
+- **Phonotactics**: Weighted syllable templates and forbidden sequences
+- **Orthography**: Phoneme-to-grapheme mapping with digraph support
+- **Phonological Rules**: Find/replace rules with context
+- **Morphology**: Affixes, syntax configuration (SVO/SOV/etc.)
+- **Writing System**: Custom scripts with SVG glyph support
+
+### Tools
+- **Word Generator**: Generate words with style controls
+- **Name Generator**: People, places, and faction names
+- **Sample Phrases**: Phrase packs for testing (Everyday, Fantasy, Sci-Fi)
+- **Text Generator**: Structured gloss-to-conlang translation
+- **Lexicon**: Full CRUD vocabulary management
+
+### Collaboration
+- **Version History**: Snapshots for reverting changes
+- **Preset Marketplace**: Share phonology, morphology, and full language presets
+- **Community Phrase Packs**: User-contributed phrase collections
 
 ## Tech Stack
 
@@ -23,8 +42,9 @@ A single-page application for creating and sharing constructed languages, built 
 - **UI Components**: shadcn/ui
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (Magic Links)
+- **Deployment**: Vercel
 
-## Setup
+## Local Development
 
 ### 1. Install Dependencies
 
@@ -39,64 +59,110 @@ npm install
 
 ### 3. Configure Environment Variables
 
-Copy `.env.example` to `.env.local` and add your Supabase credentials:
+Create `.env.local`:
 
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local`:
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### 4. Set up Database
 
-#### Using Supabase Dashboard (Recommended)
+Run the migrations in your Supabase SQL Editor:
 
-1. Go to your project's SQL Editor in the Supabase dashboard
-2. Run the migrations in order:
-   - Copy and run `supabase/migrations/001_languages_table.sql`
-   - Copy and run `supabase/migrations/002_lexicon_entries_table.sql`
-
-#### Using Supabase CLI (Alternative)
-
-1. Install the Supabase CLI:
-```bash
-npm install -g supabase
-```
-
-2. Link to your project:
-```bash
-supabase link --project-ref your-project-ref
-```
-
-3. Run migrations:
-```bash
-supabase db push
-```
+1. `supabase/migrations/001_languages_table.sql`
+2. `supabase/migrations/002_lexicon_entries_table.sql`
+3. `supabase/migrations/003_snapshots_table.sql`
 
 ### 5. Configure Auth
 
-In your Supabase dashboard:
+In Supabase Dashboard → Authentication → URL Configuration:
 
-1. Go to Authentication > URL Configuration
-2. Add `http://localhost:3000/auth/callback` to the Redirect URLs
-3. For production, add your domain's callback URL
+1. Add `http://localhost:3000/auth/callback` to Redirect URLs
+2. Enable Email provider (for Magic Links)
 
-## Running Locally
+### 6. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Deployment to Vercel
+
+### Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/coreyhaines31/conlang)
+
+### Manual Deployment
+
+#### 1. Connect Repository
+
+1. Go to [vercel.com](https://vercel.com)
+2. Import your GitHub repository
+3. Vercel auto-detects Next.js
+
+#### 2. Configure Environment Variables
+
+In Vercel Dashboard → Project Settings → Environment Variables:
+
+| Variable | Value | Environment |
+|----------|-------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | All |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `your-anon-key` | All |
+| `NEXT_PUBLIC_SITE_URL` | `https://conlang.app` | Production |
+| `NEXT_PUBLIC_SITE_URL` | `https://your-preview.vercel.app` | Preview |
+
+#### 3. Configure Custom Domain
+
+1. Go to Project Settings → Domains
+2. Add `conlang.app`
+3. Configure DNS at your registrar:
+
+```
+Type: A
+Name: @
+Value: 76.76.21.21
+
+Type: CNAME
+Name: www
+Value: cname.vercel-dns.com
+```
+
+#### 4. Update Supabase Auth URLs
+
+In Supabase Dashboard → Authentication → URL Configuration:
+
+Add these to Redirect URLs:
+```
+https://conlang.app/auth/callback
+https://www.conlang.app/auth/callback
+https://*.vercel.app/auth/callback  (for previews)
+```
+
+#### 5. Run Production Migrations
+
+Run these in your Supabase SQL Editor:
+1. `001_languages_table.sql`
+2. `002_lexicon_entries_table.sql`
+3. `003_snapshots_table.sql`
+
+### Build Commands
+
+Vercel uses these automatically:
+- **Build**: `npm run build`
+- **Output**: `.next`
+- **Install**: `npm install`
+
+---
 
 ## Database Schema
 
 ### Languages Table
-
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
@@ -106,34 +172,43 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 | is_public | BOOLEAN | Public visibility |
 | seed | BIGINT | Random seed for deterministic generation |
 | generator_version | TEXT | Version of generator algorithm |
-| definition | JSONB | Language configuration (phonology, phonotactics, orthography) |
+| definition | JSONB | Full language configuration |
 | created_at | TIMESTAMPTZ | Creation timestamp |
 | updated_at | TIMESTAMPTZ | Last update timestamp |
 
 ### Lexicon Entries Table
-
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
 | language_id | UUID | References languages.id |
-| gloss | TEXT | English meaning/gloss |
-| part_of_speech | TEXT | Part of speech (optional) |
-| phonemic_form | TEXT | Phonemic representation (optional) |
-| orthographic_form | TEXT | Written form (optional) |
+| gloss | TEXT | English meaning |
+| part_of_speech | TEXT | Part of speech |
+| phonemic_form | TEXT | Phonemic representation |
+| orthographic_form | TEXT | Written form |
 | tags | TEXT[] | Array of tags |
-| notes | TEXT | Additional notes (optional) |
-| created_at | TIMESTAMPTZ | Creation timestamp |
-| updated_at | TIMESTAMPTZ | Last update timestamp |
+| notes | TEXT | Additional notes |
 
-### RLS Policies
+### Snapshots Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| language_id | UUID | References languages.id |
+| name | TEXT | Snapshot name |
+| description | TEXT | What changed |
+| definition | JSONB | Snapshot of definition |
+| lexicon_count | INTEGER | Word count at snapshot |
 
-**Languages:**
-- Authenticated users can CRUD only their own languages
-- Anyone can read public languages (`is_public = true`)
+### Presets Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | UUID | Creator |
+| type | TEXT | phonology/phonotactics/morphology/full |
+| name | TEXT | Preset name |
+| content | JSONB | Preset content |
+| downloads | INTEGER | Download count |
 
-**Lexicon Entries:**
-- Authenticated users can CRUD entries for their own languages
-- Anyone can read entries for public languages
+---
 
 ## Project Structure
 
@@ -141,86 +216,71 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 conlang/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx          # Main editor page
-│   │   ├── actions.ts        # Server actions (CRUD operations)
-│   │   ├── l/[slug]/         # Public language routes
-│   │   └── auth/callback/    # Auth callback handler
+│   │   ├── page.tsx              # Main editor
+│   │   ├── actions.ts            # Server actions
+│   │   ├── l/[slug]/page.tsx     # Public language view
+│   │   └── auth/callback/        # Auth handler
 │   ├── components/
-│   │   ├── LanguageEditor.tsx  # Main editor component
-│   │   ├── tabs/
+│   │   ├── LanguageEditor.tsx    # Main editor
+│   │   ├── tabs/                 # All tab components
 │   │   │   ├── OverviewTab.tsx
 │   │   │   ├── PhonologyTab.tsx
 │   │   │   ├── PhonotacticsTab.tsx
 │   │   │   ├── OrthographyTab.tsx
-│   │   │   └── LexiconTab.tsx
-│   │   ├── auth/
-│   │   │   └── AuthModal.tsx
-│   │   └── ui/               # shadcn/ui components
+│   │   │   ├── LexiconTab.tsx
+│   │   │   ├── SamplePhrasesTab.tsx
+│   │   │   ├── StyleTab.tsx
+│   │   │   ├── NamesTab.tsx
+│   │   │   ├── ScriptTab.tsx
+│   │   │   ├── MorphologyTab.tsx
+│   │   │   ├── VersionHistoryTab.tsx
+│   │   │   ├── CommunityPhrasesTab.tsx
+│   │   │   └── TextGeneratorTab.tsx
+│   │   ├── PresetBrowser.tsx
+│   │   ├── ShareDialog.tsx
+│   │   └── ui/                   # shadcn/ui
 │   └── lib/
-│       ├── generator.ts      # Word generation logic (seeded RNG)
+│       ├── generator.ts          # Word generation (seeded RNG)
+│       ├── morphology.ts         # Affix/syntax system
+│       ├── textGenerator.ts      # Gloss-to-conlang
+│       ├── phrases.ts            # Phrase packs
+│       ├── presets.ts            # Phonology presets
+│       ├── script.ts             # Writing system
 │       └── supabase/
-│           ├── client.ts     # Browser client
-│           ├── server.ts     # Server client
-│           └── types.ts       # TypeScript types
-├── supabase/
-│   └── migrations/
-│       ├── 001_languages_table.sql
-│       └── 002_lexicon_entries_table.sql
-└── middleware.ts             # Auth session refresh
+├── supabase/migrations/          # SQL migrations
+├── vercel.json                   # Vercel config
+└── next.config.ts                # Next.js config
 ```
 
-## Environment Variables
+---
 
-Create a `.env.local` file in the root directory:
+## Environment Variables Reference
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key |
+| `NEXT_PUBLIC_SITE_URL` | No | Site URL for OAuth redirects |
 
-These can be found in your Supabase project settings under API.
+---
 
-## Deterministic Word Generation
+## Troubleshooting
 
-The app uses a **seeded Linear Congruential Generator (LCG)** for deterministic word generation. This ensures that:
+### Build Fails
+- Ensure all environment variables are set in Vercel
+- Check that Supabase URL doesn't have trailing slash
 
-- **Same seed + same definition = same generated words**
-- Generation is reproducible across sessions
-- Useful for testing, sharing, and version control
+### Auth Not Working
+- Verify redirect URLs in Supabase match your domain
+- Check browser console for CORS errors
+- Ensure `NEXT_PUBLIC_SITE_URL` matches your domain
 
-### How It Works
+### Database Errors
+- Run all migrations in order
+- Check RLS policies are enabled
+- Verify anon key has correct permissions
 
-1. Each language has a `seed` (bigint) and `generator_version` (text)
-2. The generator uses phonology (consonants/vowels), phonotactics (syllable templates, forbidden sequences), and orthography mappings
-3. Words are generated syllable by syllable using the templates
-4. Forbidden sequences are checked and regenerated if found
-5. Orthography mappings convert phonemic forms to written forms
-
-### Example
-
-```typescript
-// Same seed + same definition always produces the same words
-generateWords(12345, 20, definition) // Always: ["kata", "pito", "muna", ...]
-generateWords(12345, 20, definition) // Same result
-generateWords(67890, 20, definition) // Different words (different seed)
-```
-
-## Development Notes
-
-- The app uses Next.js App Router with Server Components
-- Server Actions handle database writes
-- Middleware refreshes auth sessions
-- Local storage persists anonymous drafts
-- Magic link authentication (no passwords)
-- Word generation is deterministic using seeded RNG
-- Import/Export uses JSON format including definition, seed, generator_version, and lexicon
-
-## Deployment
-
-1. Deploy to Vercel/Netlify/your platform
-2. Add environment variables to your deployment
-3. Update Supabase auth redirect URLs
-4. Run migrations on production database
+---
 
 ## License
 

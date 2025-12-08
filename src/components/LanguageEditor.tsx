@@ -193,8 +193,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     const generatorVersion = currentLanguage.generator_version || '1.0.0'
 
     const updated = await updateLanguage(
-      currentLanguage.id,
-      currentLanguage.name,
+      currentLanguage.id!,
+      currentLanguage.name || '',
       definition,
       seed,
       generatorVersion,
@@ -306,7 +306,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       definition: {
         ...(prev?.definition as LanguageDefinition),
         ...updates,
-      },
+      } as any,
     }))
   }
 

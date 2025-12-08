@@ -1,12 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createTypedClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { LexiconEntry } from '@/lib/supabase/types'
+import { LexiconEntry, Language } from '@/lib/supabase/types'
 import { CopyLanguageButton } from '@/components/CopyLanguageButton'
 import { ScriptPreview } from '@/components/ScriptPreview'
 import { WritingSystem } from '@/lib/script'
 import Link from 'next/link'
+
+async function createClient() {
+  const client = await createTypedClient()
+  return client as any
+}
 
 interface PageProps {
   params: Promise<{
@@ -23,7 +28,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
     .select('*')
     .eq('slug', slug)
     .eq('is_public', true)
-    .single()
+    .single() as { data: Language | null }
 
   if (!language) {
     notFound()
@@ -33,7 +38,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
     .from('lexicon_entries')
     .select('*')
     .eq('language_id', language.id)
-    .order('gloss', { ascending: true })
+    .order('gloss', { ascending: true }) as { data: LexiconEntry[] | null }
 
   const { data: { user } } = await supabase.auth.getUser()
 

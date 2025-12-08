@@ -284,7 +284,7 @@ export function generateFromStructured(
   const morphology = definition.morphology
   const affixes = morphology?.affixes || []
   const syntax = morphology?.syntax || DEFAULT_SYNTAX
-  const orthography = definition.orthography || {}
+  const orthography = definition.orthography || { mappings: {} }
   
   // Build lexicon lookup
   const lexiconMap = new Map(

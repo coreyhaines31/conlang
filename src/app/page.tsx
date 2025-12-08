@@ -1,11 +1,17 @@
 import { LanguageEditor } from '@/components/LanguageEditor'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createTypedClient } from '@/lib/supabase/server'
+import { Language } from '@/lib/supabase/types'
+
+async function createClient() {
+  const client = await createTypedClient()
+  return client as any
+}
 
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  let languages = []
+  let languages: Language[] = []
   if (user) {
     const { data } = await supabase
       .from('languages')

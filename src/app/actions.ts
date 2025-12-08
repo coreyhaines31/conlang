@@ -1,6 +1,12 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createTypedClient } from '@/lib/supabase/server'
+
+// Helper to get an untyped supabase client for flexible queries
+async function createClient() {
+  const client = await createTypedClient()
+  return client as any
+}
 import { revalidatePath } from 'next/cache'
 import { Language, LexiconEntry, Snapshot, Preset, CommunityPhrasePack } from '@/lib/supabase/types'
 
@@ -259,7 +265,7 @@ export async function duplicateLanguage(languageId: string): Promise<Language | 
     .eq('language_id', languageId)
 
   if (lexiconEntries && lexiconEntries.length > 0) {
-    const newEntries = lexiconEntries.map(entry => ({
+    const newEntries = lexiconEntries.map((entry: any) => ({
       language_id: data.id,
       gloss: entry.gloss,
       part_of_speech: entry.part_of_speech,
@@ -320,7 +326,7 @@ export async function copyPublicLanguage(languageId: string): Promise<Language |
     .eq('language_id', languageId)
 
   if (lexiconEntries && lexiconEntries.length > 0) {
-    const newEntries = lexiconEntries.map(entry => ({
+    const newEntries = lexiconEntries.map((entry: any) => ({
       language_id: data.id,
       gloss: entry.gloss,
       part_of_speech: entry.part_of_speech,
