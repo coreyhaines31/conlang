@@ -83,7 +83,7 @@ export default function SentryExamplePage() {
             <p className="text-sm text-muted-foreground">
               After triggering an error, check your{" "}
               <a 
-                href="https://coreys-apps.sentry.io/issues/" 
+                href="https://coreys-apps.sentry.io/projects/conlang/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary underline"
