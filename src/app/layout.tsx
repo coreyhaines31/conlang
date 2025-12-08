@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -59,6 +60,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         {children}
+        <Script
+          src="https://cdn.usefathom.com/script.js"
+          data-site="BALMNPTU"
+          defer
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
