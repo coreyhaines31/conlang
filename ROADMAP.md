@@ -121,19 +121,22 @@
 
 ---
 
-## Phase 5 — Writing system v1 (Weeks 10–12)
+## Phase 5 — Writing system v1 (Weeks 10–12) ✅
 
 ### User Stories
-- [ ] As a user, I can create a custom script and assign it to my sounds.
-- [ ] As a writer, I can generate text that looks like signage/manuscripts.
+- [x] As a user, I can create a custom script and assign it to my sounds.
+- [x] As a writer, I can generate text that looks like signage/manuscripts.
 
 ### Features
-- [ ] Custom script mode:
-  - Upload SVG glyphs
+- [x] Custom script mode:
+  - Upload SVG glyphs (paste SVG code)
   - Assign glyphs to phonemes or graphemes
   - Inline rendering preview
-- [ ] Script export pack (zip or JSON bundle)
-- [ ] Public page shows script samples
+  - Generate placeholder glyphs from phoneme inventory
+- [x] Script export pack (JSON bundle with all glyphs and mappings)
+- [x] Public page shows script samples
+  - Glyph inventory display
+  - Sample words rendered in script
 
 > Note: AI glyph generation can be a separate add-on later — don't block core script support on AI.
 
@@ -190,5 +193,6 @@
 **Phase 2**: ✅ Complete  
 **Phase 3**: ✅ Complete  
 **Phase 4**: ✅ Complete  
-**Phase 5-8**: ⏳ Not started
+**Phase 5**: ✅ Complete  
+**Phase 6-8**: ⏳ Not started
 
