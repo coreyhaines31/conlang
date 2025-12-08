@@ -405,12 +405,12 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
       </div>
 
       {/* Step 1: Name Your Language */}
-      <Card className={hasName ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20' : ''}>
+      <Card className={hasName ? 'border-primary/50 bg-primary/5' : ''}>
         <CardHeader>
           <div className="flex items-center gap-3">
             {hasName ? (
-              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                <Check className="h-5 w-5 text-white" />
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <Check className="h-5 w-5 text-primary-foreground" />
               </div>
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
@@ -436,12 +436,12 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
 
       {/* Step 2: Choose Your Approach */}
       {(hasName || !hasPhonology) && (
-        <Card className={hasPhonology ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20' : ''}>
+        <Card className={hasPhonology ? 'border-primary/50 bg-primary/5' : ''}>
           <CardHeader>
             <div className="flex items-center gap-3">
               {hasPhonology ? (
-                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-white" />
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="h-5 w-5 text-primary-foreground" />
                 </div>
               ) : (
                 <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
@@ -464,8 +464,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <Zap className="h-5 w-5 text-amber-600" />
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-primary" />
                   </div>
                   <div className="font-semibold">Quick Start</div>
                 </div>
@@ -482,8 +482,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Settings2 className="h-5 w-5 text-blue-600" />
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Settings2 className="h-5 w-5 text-primary" />
                   </div>
                   <div className="font-semibold">Full Control</div>
                 </div>
@@ -540,8 +540,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex gap-3">
-              <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                <Volume2 className="h-5 w-5 text-violet-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Volume2 className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <div className="font-medium">Sound System</div>
@@ -552,8 +552,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
             </div>
 
             <div className="flex gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                <BookOpen className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <BookOpen className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <div className="font-medium">Vocabulary</div>
@@ -564,8 +564,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
             </div>
 
             <div className="flex gap-3">
-              <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-                <PenTool className="h-5 w-5 text-orange-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <PenTool className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <div className="font-medium">Writing System</div>
@@ -576,8 +576,8 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
             </div>
 
             <div className="flex gap-3">
-              <div className="h-10 w-10 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
-                <GitBranch className="h-5 w-5 text-rose-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <GitBranch className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <div className="font-medium">Grammar</div>
