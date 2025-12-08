@@ -1,6 +1,7 @@
 import { Phonology, SyllableTemplate } from './generator'
 
 export interface PhonologyPreset {
+  id: string
   name: string
   description: string
   phonology: Phonology
@@ -12,6 +13,7 @@ export interface PhonologyPreset {
 
 export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
   {
+    id: 'balanced',
     name: 'Balanced',
     description: 'A balanced mix of sounds, similar to many natural languages',
     phonology: {
@@ -28,6 +30,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'airy',
     name: 'Airy',
     description: 'Soft, flowing sounds with lots of vowels and liquids',
     phonology: {
@@ -45,6 +48,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'harsh',
     name: 'Harsh',
     description: 'Hard consonants and sharp sounds, guttural feel',
     phonology: {
@@ -61,6 +65,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'alien',
     name: 'Alien',
     description: 'Unusual combinations, clicks and glottal sounds',
     phonology: {
@@ -78,6 +83,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'elvish',
     name: 'Elvish',
     description: 'Melodic and elegant, inspired by Tolkien',
     phonology: {
@@ -95,6 +101,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'orcish',
     name: 'Orcish',
     description: 'Brutal and guttural, warlike feel',
     phonology: {
@@ -112,6 +119,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'japanese',
     name: 'Japanese-like',
     description: 'Simple CV structure, no consonant clusters',
     phonology: {
@@ -127,6 +135,7 @@ export const PHONOLOGY_PRESETS: PhonologyPreset[] = [
     },
   },
   {
+    id: 'arabic',
     name: 'Arabic-like',
     description: 'Emphatic consonants and rich vowel system',
     phonology: {

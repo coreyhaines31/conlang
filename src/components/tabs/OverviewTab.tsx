@@ -62,12 +62,14 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
         definition: {
           ...definition,
           phonology: {
-            consonants: preset.consonants,
-            vowels: preset.vowels,
+            consonants: preset.phonology.consonants,
+            vowels: preset.phonology.vowels,
           },
           phonotactics: {
-            syllableTemplates: ['CV', 'CVC', 'V'],
-            forbiddenSequences: [],
+            syllableTemplates: preset.phonotactics.syllableTemplates.map(t => 
+              typeof t === 'string' ? t : t.template
+            ),
+            forbiddenSequences: preset.phonotactics.forbiddenSequences,
           },
         },
       })
@@ -149,10 +151,27 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
   const selectedCount = generatedWords.filter(w => w.selected).length
   const favoriteCount = generatedWords.filter(w => w.favorite).length
 
-  // If language has a name and phonology, show the word generation interface
-  if (hasName && hasPhonology) {
+  // If language has phonology defined, show the word generation interface
+  // (name is optional - user can add it later)
+  if (hasPhonology) {
     return (
       <div className="space-y-6">
+        {/* Name input if not set */}
+        {!hasName && (
+          <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="pt-4">
+              <Label className="text-amber-800 dark:text-amber-200">Name your language (optional)</Label>
+              <Input
+                type="text"
+                value={language.name || ''}
+                onChange={(e) => onUpdate({ ...language, name: e.target.value })}
+                placeholder="e.g., Elvish, Klingon, Dothraki..."
+                className="mt-2"
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
