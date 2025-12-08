@@ -417,16 +417,27 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <OverviewTab
                   language={currentLanguage}
                   onUpdate={setCurrentLanguage}
-                  onGenerateWords={() => {
-                    const words = generateWords(
-                      currentLanguage.seed || 0,
-                      20,
-                      (currentLanguage.definition || {}) as LanguageDefinition
-                    )
-                    updateDefinition({
-                      sampleWords: words.map(w => w.orthographic),
-                    })
-                  }}
+                  onAddToLexicon={
+                    user && currentLanguage.id
+                      ? async (words) => {
+                          // Add words to lexicon (local state for now, will save on next save)
+                          const newEntries = words.map((w, i) => ({
+                            id: `temp-${Date.now()}-${i}`,
+                            language_id: currentLanguage.id!,
+                            gloss: '',
+                            part_of_speech: null,
+                            phonemic_form: w.phonemic,
+                            orthographic_form: w.orthographic,
+                            tags: [],
+                            notes: null,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                          }))
+                          setLexiconEntries(prev => [...prev, ...newEntries])
+                          setActiveTab('lexicon')
+                        }
+                      : undefined
+                  }
                 />
               </TabsContent>
 
