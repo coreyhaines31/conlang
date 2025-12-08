@@ -312,54 +312,46 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
             <div className="grid md:grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                className="justify-start h-auto py-3"
+                className="justify-start h-auto py-3 overflow-hidden w-full"
                 onClick={() => onNavigate?.('phonology')}
               >
-                <div className="flex items-center gap-3">
-                  <Volume2 className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-left">
-                    <div className="font-medium">Sound System</div>
-                    <div className="text-xs text-muted-foreground">Refine phonology and phonotactics</div>
-                  </div>
+                <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium">Sound System</div>
+                  <div className="text-xs text-muted-foreground truncate">Refine phonology</div>
                 </div>
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start h-auto py-3"
+                className="justify-start h-auto py-3 overflow-hidden w-full"
                 onClick={() => onNavigate?.('lexicon')}
               >
-                <div className="flex items-center gap-3">
-                  <BookOpen className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-left">
-                    <div className="font-medium">Vocabulary</div>
-                    <div className="text-xs text-muted-foreground">Build your lexicon</div>
-                  </div>
+                <BookOpen className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium">Vocabulary</div>
+                  <div className="text-xs text-muted-foreground truncate">Build your lexicon</div>
                 </div>
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start h-auto py-3"
+                className="justify-start h-auto py-3 overflow-hidden w-full"
                 onClick={() => onNavigate?.('script')}
               >
-                <div className="flex items-center gap-3">
-                  <PenTool className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-left">
-                    <div className="font-medium">Writing System</div>
-                    <div className="text-xs text-muted-foreground">Create custom glyphs</div>
-                  </div>
+                <PenTool className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium">Writing System</div>
+                  <div className="text-xs text-muted-foreground truncate">Create custom glyphs</div>
                 </div>
               </Button>
               <Button 
                 variant="outline" 
-                className="justify-start h-auto py-3"
+                className="justify-start h-auto py-3 overflow-hidden w-full"
                 onClick={() => onNavigate?.('grammar')}
               >
-                <div className="flex items-center gap-3">
-                  <GitBranch className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-left">
-                    <div className="font-medium">Grammar</div>
-                    <div className="text-xs text-muted-foreground">Define morphology and syntax</div>
-                  </div>
+                <GitBranch className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="text-left min-w-0">
+                  <div className="font-medium">Grammar</div>
+                  <div className="text-xs text-muted-foreground truncate">Morphology & syntax</div>
                 </div>
               </Button>
             </div>
