@@ -208,7 +208,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
             <CardDescription>Create words using your language's sound system</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Label htmlFor="wordCount">Generate</Label>
                 <Input
@@ -222,7 +222,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
                 />
                 <span className="text-sm text-muted-foreground">words</span>
               </div>
-              <Button onClick={handleGenerate}>
+              <Button onClick={handleGenerate} className="shrink-0">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate
               </Button>
