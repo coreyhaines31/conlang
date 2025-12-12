@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EditorNavigation } from './EditorNavigation'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Globe, Lock, Copy, Trash2, Menu, X, User, LogOut } from 'lucide-react'
+import { Globe, Lock, Copy, Trash2, Menu, X, User as UserIcon, LogOut } from 'lucide-react'
 import { generateWords, LanguageDefinition } from '@/lib/generator'
 import { OverviewTab } from './tabs/OverviewTab'
 import { PhonologyTab } from './tabs/PhonologyTab'
@@ -526,7 +526,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           {user ? (
             <div className="flex items-center gap-2 p-2 rounded-lg bg-background">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-primary" />
+                <UserIcon className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{user.email?.split('@')[0]}</div>
@@ -543,7 +543,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               className="w-full"
               size="sm"
             >
-              <User className="h-4 w-4 mr-2" />
+              <UserIcon className="h-4 w-4 mr-2" />
               Create Account
             </Button>
           )}
