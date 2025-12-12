@@ -38,6 +38,7 @@ import { ShareDialog } from './ShareDialog'
 import { CommunityPhrasesTab } from './tabs/CommunityPhrasesTab'
 import { TextGeneratorTab } from './tabs/TextGeneratorTab'
 import { Preset } from '@/lib/supabase/types'
+import { LanguageSelector } from './LanguageSelector'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -66,6 +67,7 @@ const EMPTY_LANGUAGE: Partial<Language> = {
 export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) {
   const [languages, setLanguages] = useState(initialLanguages)
   const [currentLanguage, setCurrentLanguage] = useState<Partial<Language> | null>(null)
+  const [localDrafts, setLocalDrafts] = useState<Partial<Language>[]>([])
   const [lexiconEntries, setLexiconEntries] = useState<LexiconEntry[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -73,16 +75,33 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const supabase = createClient()
 
-  // Load draft from localStorage on mount, or create new language
+  // Load drafts from localStorage on mount
   useEffect(() => {
-    const draft = localStorage.getItem('languageDraft')
-    if (draft) {
+    // Load all local drafts
+    const draftsJson = localStorage.getItem('languageDrafts')
+    let drafts: Partial<Language>[] = []
+    if (draftsJson) {
       try {
-        const parsed = JSON.parse(draft)
-        setCurrentLanguage(parsed)
-        return
+        drafts = JSON.parse(draftsJson)
+        setLocalDrafts(drafts)
       } catch (e) {
-        console.error('Failed to parse draft', e)
+        console.error('Failed to parse drafts', e)
+      }
+    }
+    
+    // Also check for legacy single draft
+    const legacyDraft = localStorage.getItem('languageDraft')
+    if (legacyDraft && !draftsJson) {
+      try {
+        const parsed = JSON.parse(legacyDraft)
+        if (parsed.name) {
+          drafts = [parsed]
+          setLocalDrafts(drafts)
+          localStorage.setItem('languageDrafts', JSON.stringify(drafts))
+          localStorage.removeItem('languageDraft')
+        }
+      } catch (e) {
+        console.error('Failed to parse legacy draft', e)
       }
     }
     
@@ -92,16 +111,36 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       return
     }
     
+    // If there are local drafts, select the first one
+    if (drafts.length > 0) {
+      setCurrentLanguage(drafts[0])
+      return
+    }
+    
     // Otherwise, start with a fresh new language (no empty state)
     setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
   }, [])
 
-  // Save to localStorage when draft changes (logged out only)
+  // Save current language to local drafts when it changes (for unsaved languages)
   useEffect(() => {
-    if (!user && currentLanguage && !currentLanguage.id) {
-      localStorage.setItem('languageDraft', JSON.stringify(currentLanguage))
+    if (currentLanguage && !currentLanguage.id && currentLanguage.name) {
+      // Update or add to local drafts
+      setLocalDrafts(prev => {
+        const existingIndex = prev.findIndex(d => d.seed === currentLanguage.seed)
+        let newDrafts: Partial<Language>[]
+        if (existingIndex >= 0) {
+          newDrafts = [...prev]
+          newDrafts[existingIndex] = currentLanguage
+        } else {
+          newDrafts = [...prev, currentLanguage]
+        }
+        // Limit to 10 drafts
+        newDrafts = newDrafts.slice(0, 10)
+        localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
+        return newDrafts
+      })
     }
-  }, [currentLanguage, user])
+  }, [currentLanguage])
 
   // Load lexicon entries when language changes
   useEffect(() => {
@@ -128,7 +167,17 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
   const handleSaveToLocal = () => {
     if (!currentLanguage?.name) return
-    localStorage.setItem('languageDraft', JSON.stringify(currentLanguage))
+    // Save current language to local drafts
+    const existingIndex = localDrafts.findIndex(d => d.seed === currentLanguage.seed)
+    let newDrafts: Partial<Language>[]
+    if (existingIndex >= 0) {
+      newDrafts = [...localDrafts]
+      newDrafts[existingIndex] = currentLanguage
+    } else {
+      newDrafts = [...localDrafts, currentLanguage].slice(0, 10)
+    }
+    setLocalDrafts(newDrafts)
+    localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
     alert('Saved to local storage!')
   }
 
@@ -419,15 +468,30 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
             <span className="font-semibold text-lg">Conlang</span>
           </a>
-          <Button onClick={handleNewLanguage} className="w-full" size="sm">
-            + New Language
-          </Button>
+          <LanguageSelector
+            currentLanguage={currentLanguage}
+            savedLanguages={languages}
+            localDrafts={localDrafts}
+            onSelectLanguage={(lang) => {
+              setCurrentLanguage(lang)
+              setActiveTab('overview')
+            }}
+            onNewLanguage={handleNewLanguage}
+          />
         </div>
-        {/* Mobile: New Language button at top */}
+        {/* Mobile: Language selector at top */}
         <div className="p-3 border-b md:hidden">
-          <Button onClick={() => { handleNewLanguage(); setMobileMenuOpen(false); }} className="w-full" size="sm">
-            + New Language
-          </Button>
+          <LanguageSelector
+            currentLanguage={currentLanguage}
+            savedLanguages={languages}
+            localDrafts={localDrafts}
+            onSelectLanguage={(lang) => {
+              setCurrentLanguage(lang)
+              setActiveTab('overview')
+            }}
+            onNewLanguage={handleNewLanguage}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
         </div>
 
         {/* Navigation */}
