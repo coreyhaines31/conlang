@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EditorNavigation } from './EditorNavigation'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Globe, Lock, Copy, Trash2 } from 'lucide-react'
+import { Globe, Lock, Copy, Trash2, Menu, X } from 'lucide-react'
 import { generateWords, LanguageDefinition } from '@/lib/generator'
 import { OverviewTab } from './tabs/OverviewTab'
 import { PhonologyTab } from './tabs/PhonologyTab'
@@ -70,6 +70,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const supabase = createClient()
 
   // Load draft from localStorage on mount, or create new language
@@ -383,11 +384,36 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card border-b px-4 py-3 flex items-center justify-between">
+        <a href="/" className="flex items-center gap-2">
+          <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
+          <span className="font-semibold text-lg">Conlang</span>
+        </a>
+        <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 z-40 mt-14"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Single Left Sidebar */}
-      <div className="w-64 border-r bg-card flex flex-col">
-        {/* Logo & Header */}
-        <div className="p-4 border-b">
+      <div className={cn(
+        "w-64 border-r bg-card flex flex-col z-50",
+        "fixed md:relative h-full",
+        "transition-transform duration-200 ease-in-out",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "mt-14 md:mt-0"
+      )}>
+        {/* Logo & Header - Hidden on mobile since we have the mobile header */}
+        <div className="p-4 border-b hidden md:block">
           <a href="/" className="flex items-center gap-2 mb-3">
             <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
             <span className="font-semibold text-lg">Conlang</span>
@@ -396,10 +422,16 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             + New Language
           </Button>
         </div>
+        {/* Mobile: New Language button at top */}
+        <div className="p-3 border-b md:hidden">
+          <Button onClick={() => { handleNewLanguage(); setMobileMenuOpen(false); }} className="w-full" size="sm">
+            + New Language
+          </Button>
+        </div>
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto p-3">
-          <EditorNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <EditorNavigation activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setMobileMenuOpen(false); }} />
 
           {/* My Languages */}
           {user && languages.length > 0 && (
@@ -503,7 +535,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       </div>
 
       {/* Main Editor */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-16 md:pt-6">
         {currentLanguage ? (
           <div className="space-y-4 max-w-5xl">
             {/* Only show header name when not in onboarding mode */}
