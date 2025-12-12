@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EditorNavigation } from './EditorNavigation'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Globe, Lock, Copy, Trash2, Menu, X } from 'lucide-react'
+import { Globe, Lock, Copy, Trash2, Menu, X, User, LogOut } from 'lucide-react'
 import { generateWords, LanguageDefinition } from '@/lib/generator'
 import { OverviewTab } from './tabs/OverviewTab'
 import { PhonologyTab } from './tabs/PhonologyTab'
@@ -407,10 +407,11 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       {/* Single Left Sidebar */}
       <div className={cn(
         "w-64 border-r bg-card flex flex-col z-50",
-        "fixed md:relative h-full",
+        "fixed md:relative",
+        "h-[calc(100vh-3.5rem)] md:h-full",
         "transition-transform duration-200 ease-in-out",
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        "mt-14 md:mt-0"
+        "top-14 md:top-0"
       )}>
         {/* Logo & Header - Hidden on mobile since we have the mobile header */}
         <div className="p-4 border-b hidden md:block">
@@ -523,13 +524,28 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           )}
 
           {user ? (
-            <Button onClick={handleLogout} variant="ghost" className="w-full text-xs" size="sm">
-              Logout
-            </Button>
-          ) : (
-            <div className="text-xs text-muted-foreground text-center">
-              Save to create account
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-background">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{user.email?.split('@')[0]}</div>
+                <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+              </div>
+              <Button onClick={handleLogout} variant="ghost" size="icon" className="shrink-0 h-8 w-8" title="Sign out">
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
+          ) : (
+            <Button 
+              onClick={() => setShowAuthModal(true)} 
+              variant="outline" 
+              className="w-full"
+              size="sm"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Create Account
+            </Button>
           )}
         </div>
       </div>
