@@ -67,7 +67,7 @@ USING (is_public = true);
    https://supabase.com/dashboard/project/hczklwevoipzxzzspfuz/auth/url-configuration
 
 2. **Add the following to "Redirect URLs":**
-   - For local development: `http://localhost:3000/auth/callback`
+   - For local development: `http://localhost:3001/auth/callback`
    - For production (when you deploy): `https://your-domain.com/auth/callback`
 
 ## Test Your Setup
@@ -85,4 +85,4 @@ Run the app locally:
 npm run dev
 ```
 
-Visit http://localhost:3000 and start creating languages!
+Visit http://localhost:3001 and start creating languages!
