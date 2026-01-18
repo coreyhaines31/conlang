@@ -54,7 +54,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
             href="/" 
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <img src="/conlang-icon.svg" alt="Conlang" className="h-5 w-auto" />
+            <img src="/conlang-icon.svg" alt="Conlang" className="h-5 w-auto" width={20} height={20} />
             <span>← Back to Editor</span>
           </Link>
           {!isOwner && (
@@ -66,9 +66,9 @@ export default async function PublicLanguagePage({ params }: PageProps) {
           <CardHeader>
             <CardTitle className="text-3xl">{language.name}</CardTitle>
             <CardDescription>
-              Created: {new Date(language.created_at).toLocaleDateString()}
+              Created: {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(language.created_at))}
               {' • '}
-              Updated: {new Date(language.updated_at).toLocaleDateString()}
+              Updated: {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(language.updated_at))}
             </CardDescription>
           </CardHeader>
           <CardContent>
