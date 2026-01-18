@@ -425,10 +425,11 @@ export function GlyphCanvas({ onSave, phoneme = '' }: GlyphCanvasProps) {
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
+            id="use-ai-cleanup"
             type="checkbox"
             checked={useAI}
             onChange={(e) => setUseAI(e.target.checked)}
-            className="rounded"
+            className="rounded accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <span className="text-sm">Use AI cleanup (recommended)</span>
         </label>
@@ -462,7 +463,7 @@ export function GlyphCanvas({ onSave, phoneme = '' }: GlyphCanvasProps) {
           disabled={paths.length === 0 || isProcessing}
           className="flex-1"
         >
-          {isProcessing ? 'Processing...' : useAI ? '✨ Generate with AI' : 'Stylize'}
+          {isProcessing ? 'Processing…' : useAI ? '✨ Generate with AI' : 'Stylize'}
         </Button>
       </div>
 

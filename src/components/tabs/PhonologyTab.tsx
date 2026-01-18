@@ -135,9 +135,10 @@ export function PhonologyTab({ definition, onUpdate }: PhonologyTabProps) {
                   <span className="font-mono">{c}</span>
                   <button
                     onClick={() => removeConsonant(c)}
-                    className="ml-1 text-destructive hover:text-destructive/80"
+                    className="ml-1 text-destructive hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label={`Remove consonant ${c}`}
                   >
-                    ×
+                    <span aria-hidden="true">×</span>
                   </button>
                 </div>
               ))
@@ -183,9 +184,10 @@ export function PhonologyTab({ definition, onUpdate }: PhonologyTabProps) {
                   <span className="font-mono">{v}</span>
                   <button
                     onClick={() => removeVowel(v)}
-                    className="ml-1 text-destructive hover:text-destructive/80"
+                    className="ml-1 text-destructive hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                    aria-label={`Remove vowel ${v}`}
                   >
-                    ×
+                    <span aria-hidden="true">×</span>
                   </button>
                 </div>
               ))

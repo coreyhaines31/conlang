@@ -360,9 +360,10 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
                         e.stopPropagation()
                         handleRemoveGlyph(glyph.id)
                       }}
-                      className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 text-xs"
+                      className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 text-destructive hover:text-destructive/80 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      aria-label={`Remove glyph ${glyph.name}`}
                     >
-                      ×
+                      <span aria-hidden="true">×</span>
                     </button>
                   </div>
                 )
@@ -374,7 +375,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
           {selectedGlyph && (
             <div className="border-t pt-4">
               <Label className="text-sm mb-2 block">
-                Map "{writingSystem.glyphs.find(g => g.id === selectedGlyph)?.name}" to phoneme:
+                Map &ldquo;{writingSystem.glyphs.find(g => g.id === selectedGlyph)?.name}&rdquo; to phoneme:
               </Label>
               <div className="flex flex-wrap gap-1">
                 {allPhonemes.map(phoneme => {
@@ -407,11 +408,12 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Preview Text</Label>
+            <Label htmlFor="script-preview-text">Preview Text</Label>
             <Input
+              id="script-preview-text"
               value={previewText}
               onChange={(e) => setPreviewText(e.target.value)}
-              placeholder="Enter text to preview"
+              placeholder="Enter text to preview…"
             />
           </div>
 
@@ -480,7 +482,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
               rows={4}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Use viewBox="0 0 100 100" for best results. Use "currentColor" for fill/stroke to match theme.
+              Use viewBox=&ldquo;0 0 100 100&rdquo; for best results. Use &ldquo;currentColor&rdquo; for fill/stroke to match theme.
             </p>
           </div>
           

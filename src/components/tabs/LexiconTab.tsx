@@ -163,11 +163,15 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Input
-          placeholder="Search by gloss, phonemic form, or orthographic form..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div>
+          <label htmlFor="lexicon-search" className="sr-only">Search lexicon</label>
+          <Input
+            id="lexicon-search"
+            placeholder="Search by gloss, phonemic form, or orthographic form…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
         {filteredEntries.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">

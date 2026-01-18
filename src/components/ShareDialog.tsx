@@ -53,7 +53,7 @@ export function ShareDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share &quot;{languageName}&quot;</DialogTitle>
+          <DialogTitle>Share &ldquo;{languageName}&rdquo;</DialogTitle>
           <DialogDescription>
             {isPublic 
               ? 'Your language is public and can be viewed by anyone with the link.'
@@ -83,18 +83,20 @@ export function ShareDialog({
           {/* Share URL */}
           {isPublic && shareUrl ? (
             <div className="space-y-2">
-              <Label>Share Link</Label>
+              <Label htmlFor="share-url">Share Link</Label>
               <div className="flex gap-2">
-                <Input 
-                  value={shareUrl} 
-                  readOnly 
+                <Input
+                  id="share-url"
+                  value={shareUrl}
+                  readOnly
                   className="font-mono text-sm"
+                  aria-describedby="share-url-description"
                 />
-                <Button onClick={handleCopy}>
+                <Button onClick={handleCopy} aria-label={copied ? 'Copied to clipboard' : 'Copy link to clipboard'}>
                   {copied ? '✓ Copied!' : 'Copy'}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p id="share-url-description" className="text-xs text-muted-foreground">
                 Anyone with this link can view your language and copy it to their account.
               </p>
             </div>
@@ -143,7 +145,7 @@ export function ShareDialog({
                     }
                   }}
                 >
-                  More...
+                  More…
                 </Button>
               </div>
             </div>
