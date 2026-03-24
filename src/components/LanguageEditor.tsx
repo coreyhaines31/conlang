@@ -39,6 +39,7 @@ import { CommunityPhrasesTab } from './tabs/CommunityPhrasesTab'
 import { TextGeneratorTab } from './tabs/TextGeneratorTab'
 import { Preset } from '@/lib/supabase/types'
 import { LanguageSelector } from './LanguageSelector'
+import { SupportWidget } from './SupportWidget'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
@@ -610,6 +611,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               </Button>
             </div>
           )}
+
+          <SupportWidget isLoggedIn={!!user} />
 
           {user ? (
             <div className="flex items-center gap-2 p-2 rounded-lg bg-background">
