@@ -1,101 +1,210 @@
 'use server'
 
-import { createClient as createTypedClient } from '@/lib/supabase/server'
-
-// Helper to get an untyped supabase client for flexible queries
-async function createClient() {
-  const client = await createTypedClient()
-  return client as any
-}
 import { revalidatePath } from 'next/cache'
-import { Language, LexiconEntry, Snapshot, Preset, CommunityPhrasePack } from '@/lib/supabase/types'
+import { headers } from 'next/headers'
+import { eq, asc, desc, and, count } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import {
+  languages,
+  lexiconEntries,
+  snapshots,
+  presets,
+  communityPhrasePacks,
+  type Language,
+  type LexiconEntry,
+  type Snapshot,
+  type Preset,
+  type CommunityPhrasePack,
+} from '@/lib/db/schema'
+import { auth } from '@/lib/auth'
+
+async function requireUser() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) throw new Error('Not authenticated')
+  return session.user
+}
+
+// ===== LANGUAGES =====
 
 export async function saveLanguage(
   name: string,
   slug: string,
-  definition: any,
+  definition: unknown,
   seed: number,
   generatorVersion: string,
   isPublic: boolean
-): Promise<Language | null> {
-  const supabase = await createClient()
+): Promise<Language> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('languages')
-    .insert({
-      user_id: user.id,
-      name,
-      slug,
-      definition,
-      seed,
-      generator_version: generatorVersion,
-      is_public: isPublic,
-    } as any)
-    .select()
-    .single()
-
-  if (error) throw error
+  const [row] = await db
+    .insert(languages)
+    .values({ userId: user.id, name, slug, definition, seed, generatorVersion, isPublic })
+    .returning()
 
   revalidatePath('/')
-  return data
+  return row
 }
 
 export async function updateLanguage(
   id: string,
   name: string,
-  definition: any,
+  definition: unknown,
   seed: number,
   generatorVersion: string,
   isPublic: boolean
-): Promise<Language | null> {
-  const supabase = await createClient()
+): Promise<Language> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const [row] = await db
+    .update(languages)
+    .set({ name, definition, seed, generatorVersion, isPublic, updatedAt: new Date() })
+    .where(and(eq(languages.id, id), eq(languages.userId, user.id)))
+    .returning()
 
-  const { data, error } = await supabase
-    .from('languages')
-    .update({
-      name,
-      definition,
-      seed,
-      generator_version: generatorVersion,
-      is_public: isPublic,
-    } as any)
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .select()
-    .single()
-
-  if (error) throw error
+  if (!row) throw new Error('Language not found')
 
   revalidatePath('/')
-  revalidatePath(`/l/${data.slug}`)
-  return data
+  revalidatePath(`/l/${row.slug}`)
+  return row
 }
 
 export async function deleteLanguage(id: string): Promise<boolean> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { error } = await supabase
-    .from('languages')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
-
-  if (error) throw error
+  await db
+    .delete(languages)
+    .where(and(eq(languages.id, id), eq(languages.userId, user.id)))
 
   revalidatePath('/')
   return true
 }
 
-// Lexicon CRUD
+export async function createSlug(name: string): Promise<string> {
+  let baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  let slug = baseSlug
+  let counter = 2
+
+  while (true) {
+    const existing = await db
+      .select({ id: languages.id })
+      .from(languages)
+      .where(eq(languages.slug, slug))
+      .limit(1)
+
+    if (existing.length === 0) break
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+
+  return slug
+}
+
+export async function duplicateLanguage(languageId: string): Promise<Language> {
+  const user = await requireUser()
+
+  const [original] = await db
+    .select()
+    .from(languages)
+    .where(eq(languages.id, languageId))
+    .limit(1)
+
+  if (!original) throw new Error('Language not found')
+
+  const newName = `${original.name} (Copy)`
+  const newSlug = await createSlug(newName)
+
+  const [newLang] = await db
+    .insert(languages)
+    .values({
+      userId: user.id,
+      name: newName,
+      slug: newSlug,
+      definition: original.definition,
+      seed: original.seed,
+      generatorVersion: original.generatorVersion,
+      isPublic: false,
+    })
+    .returning()
+
+  const entries = await db
+    .select()
+    .from(lexiconEntries)
+    .where(eq(lexiconEntries.languageId, languageId))
+
+  if (entries.length > 0) {
+    await db.insert(lexiconEntries).values(
+      entries.map((e) => ({
+        languageId: newLang.id,
+        gloss: e.gloss,
+        partOfSpeech: e.partOfSpeech,
+        phonemicForm: e.phonemicForm,
+        orthographicForm: e.orthographicForm,
+        tags: e.tags,
+        notes: e.notes,
+      }))
+    )
+  }
+
+  revalidatePath('/')
+  return newLang
+}
+
+export async function copyPublicLanguage(languageId: string): Promise<Language> {
+  const user = await requireUser()
+
+  const [original] = await db
+    .select()
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.isPublic, true)))
+    .limit(1)
+
+  if (!original) throw new Error('Public language not found')
+
+  const newName = `${original.name} (Copy)`
+  const newSlug = await createSlug(newName)
+
+  const [newLang] = await db
+    .insert(languages)
+    .values({
+      userId: user.id,
+      name: newName,
+      slug: newSlug,
+      definition: original.definition,
+      seed: original.seed,
+      generatorVersion: original.generatorVersion,
+      isPublic: false,
+    })
+    .returning()
+
+  const entries = await db
+    .select()
+    .from(lexiconEntries)
+    .where(eq(lexiconEntries.languageId, languageId))
+
+  if (entries.length > 0) {
+    await db.insert(lexiconEntries).values(
+      entries.map((e) => ({
+        languageId: newLang.id,
+        gloss: e.gloss,
+        partOfSpeech: e.partOfSpeech,
+        phonemicForm: e.phonemicForm,
+        orthographicForm: e.orthographicForm,
+        tags: e.tags,
+        notes: e.notes,
+      }))
+    )
+  }
+
+  revalidatePath('/')
+  return newLang
+}
+
+// ===== LEXICON =====
+
 export async function createLexiconEntry(
   languageId: string,
   gloss: string,
@@ -104,30 +213,32 @@ export async function createLexiconEntry(
   orthographicForm?: string,
   tags?: string[],
   notes?: string
-): Promise<LexiconEntry | null> {
-  const supabase = await createClient()
+): Promise<LexiconEntry> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
+    .limit(1)
 
-  const { data, error } = await supabase
-    .from('lexicon_entries')
-    .insert({
-      language_id: languageId,
+  if (!lang) throw new Error('Language not found')
+
+  const [row] = await db
+    .insert(lexiconEntries)
+    .values({
+      languageId,
       gloss,
-      part_of_speech: partOfSpeech || null,
-      phonemic_form: phonemicForm || null,
-      orthographic_form: orthographicForm || null,
-      tags: tags || [],
-      notes: notes || null,
+      partOfSpeech: partOfSpeech ?? null,
+      phonemicForm: phonemicForm ?? null,
+      orthographicForm: orthographicForm ?? null,
+      tags: tags ?? [],
+      notes: notes ?? null,
     })
-    .select()
-    .single()
-
-  if (error) throw error
+    .returning()
 
   revalidatePath('/')
-  return data
+  return row
 }
 
 export async function updateLexiconEntry(
@@ -138,407 +249,208 @@ export async function updateLexiconEntry(
   orthographicForm?: string,
   tags?: string[],
   notes?: string
-): Promise<LexiconEntry | null> {
-  const supabase = await createClient()
+): Promise<LexiconEntry> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  // Verify ownership via join
+  const [existing] = await db
+    .select({ id: lexiconEntries.id })
+    .from(lexiconEntries)
+    .innerJoin(languages, and(eq(languages.id, lexiconEntries.languageId), eq(languages.userId, user.id)))
+    .where(eq(lexiconEntries.id, id))
+    .limit(1)
 
-  const { data, error } = await supabase
-    .from('lexicon_entries')
-    .update({
+  if (!existing) throw new Error('Entry not found')
+
+  const [row] = await db
+    .update(lexiconEntries)
+    .set({
       gloss,
-      part_of_speech: partOfSpeech || null,
-      phonemic_form: phonemicForm || null,
-      orthographic_form: orthographicForm || null,
-      tags: tags || [],
-      notes: notes || null,
+      partOfSpeech: partOfSpeech ?? null,
+      phonemicForm: phonemicForm ?? null,
+      orthographicForm: orthographicForm ?? null,
+      tags: tags ?? [],
+      notes: notes ?? null,
+      updatedAt: new Date(),
     })
-    .eq('id', id)
-    .select()
-    .single()
+    .where(eq(lexiconEntries.id, id))
+    .returning()
 
-  if (error) throw error
+  if (!row) throw new Error('Entry not found')
 
   revalidatePath('/')
-  return data
+  return row
 }
 
 export async function deleteLexiconEntry(id: string): Promise<boolean> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  // Verify ownership via join before deleting
+  const [existing] = await db
+    .select({ id: lexiconEntries.id })
+    .from(lexiconEntries)
+    .innerJoin(languages, and(eq(languages.id, lexiconEntries.languageId), eq(languages.userId, user.id)))
+    .where(eq(lexiconEntries.id, id))
+    .limit(1)
 
-  const { error } = await supabase
-    .from('lexicon_entries')
-    .delete()
-    .eq('id', id)
+  if (!existing) throw new Error('Entry not found')
 
-  if (error) throw error
+  await db.delete(lexiconEntries).where(eq(lexiconEntries.id, id))
 
   revalidatePath('/')
   return true
 }
 
 export async function getLexiconEntries(languageId: string): Promise<LexiconEntry[]> {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('lexicon_entries')
-    .select('*')
-    .eq('language_id', languageId)
-    .order('gloss', { ascending: true })
-
-  if (error) throw error
-  return data || []
-}
-
-export async function createSlug(name: string): Promise<string> {
-  const supabase = await createClient()
-
-  let baseSlug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-  let slug = baseSlug
-  let counter = 2
-
-  // Check for uniqueness
-  while (true) {
-    const { data } = await supabase
-      .from('languages')
-      .select('id')
-      .eq('slug', slug)
-      .single()
-
-    if (!data) break
-
-    slug = `${baseSlug}-${counter}`
-    counter++
-  }
-
-  return slug
-}
-
-export async function duplicateLanguage(languageId: string): Promise<Language | null> {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  // Get the original language
-  const { data: original, error: fetchError } = await supabase
-    .from('languages')
-    .select('*')
-    .eq('id', languageId)
-    .single()
-
-  if (fetchError || !original) throw new Error('Language not found')
-
-  // Create a new slug for the copy
-  const newName = `${original.name} (Copy)`
-  const newSlug = await createSlug(newName)
-
-  // Create the duplicate
-  const { data, error } = await supabase
-    .from('languages')
-    .insert({
-      user_id: user.id,
-      name: newName,
-      slug: newSlug,
-      definition: original.definition,
-      seed: original.seed,
-      generator_version: original.generator_version,
-      is_public: false, // Always start as private
-    } as any)
+  return db
     .select()
-    .single()
-
-  if (error) throw error
-
-  // Optionally copy lexicon entries too
-  const { data: lexiconEntries } = await supabase
-    .from('lexicon_entries')
-    .select('*')
-    .eq('language_id', languageId)
-
-  if (lexiconEntries && lexiconEntries.length > 0) {
-    const newEntries = lexiconEntries.map((entry: any) => ({
-      language_id: data.id,
-      gloss: entry.gloss,
-      part_of_speech: entry.part_of_speech,
-      phonemic_form: entry.phonemic_form,
-      orthographic_form: entry.orthographic_form,
-      tags: entry.tags,
-      notes: entry.notes,
-    }))
-
-    await supabase.from('lexicon_entries').insert(newEntries)
-  }
-
-  revalidatePath('/')
-  return data
+    .from(lexiconEntries)
+    .where(eq(lexiconEntries.languageId, languageId))
+    .orderBy(asc(lexiconEntries.gloss))
 }
 
-export async function copyPublicLanguage(languageId: string): Promise<Language | null> {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  // Get the public language (must be public)
-  const { data: original, error: fetchError } = await supabase
-    .from('languages')
-    .select('*')
-    .eq('id', languageId)
-    .eq('is_public', true)
-    .single()
-
-  if (fetchError || !original) throw new Error('Public language not found')
-
-  // Create a new slug for the copy
-  const newName = `${original.name} (Copy)`
-  const newSlug = await createSlug(newName)
-
-  // Create the copy
-  const { data, error } = await supabase
-    .from('languages')
-    .insert({
-      user_id: user.id,
-      name: newName,
-      slug: newSlug,
-      definition: original.definition,
-      seed: original.seed,
-      generator_version: original.generator_version,
-      is_public: false, // Start as private
-    } as any)
-    .select()
-    .single()
-
-  if (error) throw error
-
-  // Copy lexicon entries too
-  const { data: lexiconEntries } = await supabase
-    .from('lexicon_entries')
-    .select('*')
-    .eq('language_id', languageId)
-
-  if (lexiconEntries && lexiconEntries.length > 0) {
-    const newEntries = lexiconEntries.map((entry: any) => ({
-      language_id: data.id,
-      gloss: entry.gloss,
-      part_of_speech: entry.part_of_speech,
-      phonemic_form: entry.phonemic_form,
-      orthographic_form: entry.orthographic_form,
-      tags: entry.tags,
-      notes: entry.notes,
-    }))
-
-    await supabase.from('lexicon_entries').insert(newEntries)
-  }
-
-  revalidatePath('/')
-  return data
-}
-
-// ===== SNAPSHOTS (VERSION HISTORY) =====
+// ===== SNAPSHOTS =====
 
 export async function createSnapshot(
   languageId: string,
   name?: string,
   description?: string
-): Promise<Snapshot | null> {
-  const supabase = await createClient()
+): Promise<Snapshot> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const [lang] = await db
+    .select({ definition: languages.definition })
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
+    .limit(1)
 
-  // Get current language definition
-  const { data: language } = await supabase
-    .from('languages')
-    .select('definition')
-    .eq('id', languageId)
-    .eq('user_id', user.id)
-    .single()
+  if (!lang) throw new Error('Language not found')
 
-  if (!language) throw new Error('Language not found')
+  const [{ entryCount }] = await db
+    .select({ entryCount: count() })
+    .from(lexiconEntries)
+    .where(eq(lexiconEntries.languageId, languageId))
 
-  // Count lexicon entries
-  const { count } = await supabase
-    .from('lexicon_entries')
-    .select('*', { count: 'exact', head: true })
-    .eq('language_id', languageId)
-
-  const { data, error } = await supabase
-    .from('snapshots')
-    .insert({
-      language_id: languageId,
-      name: name || null,
-      description: description || null,
-      definition: language.definition,
-      lexicon_count: count || 0,
+  const [row] = await db
+    .insert(snapshots)
+    .values({
+      languageId,
+      name: name ?? null,
+      description: description ?? null,
+      definition: lang.definition,
+      lexiconCount: entryCount,
     })
-    .select()
-    .single()
-
-  if (error) throw error
+    .returning()
 
   revalidatePath('/')
-  return data
+  return row
 }
 
 export async function getSnapshots(languageId: string): Promise<Snapshot[]> {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('snapshots')
-    .select('*')
-    .eq('language_id', languageId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data || []
+  return db
+    .select()
+    .from(snapshots)
+    .where(eq(snapshots.languageId, languageId))
+    .orderBy(desc(snapshots.createdAt))
 }
 
 export async function deleteSnapshot(id: string): Promise<boolean> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const [snapshot] = await db
+    .select({ languageId: snapshots.languageId })
+    .from(snapshots)
+    .where(eq(snapshots.id, id))
+    .limit(1)
 
-  const { error } = await supabase
-    .from('snapshots')
-    .delete()
-    .eq('id', id)
+  if (!snapshot) throw new Error('Snapshot not found')
 
-  if (error) throw error
+  // Verify the snapshot belongs to a language owned by the user
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, snapshot.languageId), eq(languages.userId, user.id)))
+    .limit(1)
+
+  if (!lang) throw new Error('Snapshot not found')
+
+  await db.delete(snapshots).where(eq(snapshots.id, id))
 
   revalidatePath('/')
   return true
 }
 
-export async function restoreSnapshot(snapshotId: string): Promise<Language | null> {
-  const supabase = await createClient()
+export async function restoreSnapshot(snapshotId: string): Promise<Language> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  // Get the snapshot
-  const { data: snapshot, error: snapshotError } = await supabase
-    .from('snapshots')
-    .select('*')
-    .eq('id', snapshotId)
-    .single()
-
-  if (snapshotError || !snapshot) throw new Error('Snapshot not found')
-
-  // Update the language definition
-  const { data, error } = await supabase
-    .from('languages')
-    .update({
-      definition: snapshot.definition,
-    })
-    .eq('id', snapshot.language_id)
-    .eq('user_id', user.id)
+  const [snapshot] = await db
     .select()
-    .single()
+    .from(snapshots)
+    .where(eq(snapshots.id, snapshotId))
+    .limit(1)
 
-  if (error) throw error
+  if (!snapshot) throw new Error('Snapshot not found')
+
+  const [row] = await db
+    .update(languages)
+    .set({ definition: snapshot.definition, updatedAt: new Date() })
+    .where(and(eq(languages.id, snapshot.languageId), eq(languages.userId, user.id)))
+    .returning()
+
+  if (!row) throw new Error('Language not found')
 
   revalidatePath('/')
-  return data
+  return row
 }
 
-// ===== PRESETS (MARKETPLACE) =====
+// ===== PRESETS =====
 
 export async function createPreset(
   type: 'phonology' | 'phonotactics' | 'morphology' | 'full',
   name: string,
   description: string,
-  content: any,
+  content: unknown,
   tags?: string[]
-): Promise<Preset | null> {
-  const supabase = await createClient()
+): Promise<Preset> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('presets')
-    .insert({
-      user_id: user.id,
-      type,
-      name,
-      description,
-      content,
-      tags: tags || [],
-    })
-    .select()
-    .single()
-
-  if (error) throw error
+  const [row] = await db
+    .insert(presets)
+    .values({ userId: user.id, type, name, description, content, tags: tags ?? [] })
+    .returning()
 
   revalidatePath('/presets')
-  return data
+  return row
 }
 
 export async function getPresets(
   type?: 'phonology' | 'phonotactics' | 'morphology' | 'full',
   limit?: number
 ): Promise<Preset[]> {
-  const supabase = await createClient()
-
-  let query = supabase
-    .from('presets')
-    .select('*')
-    .eq('is_public', true)
-    .order('downloads', { ascending: false })
-
-  if (type) {
-    query = query.eq('type', type)
-  }
-
-  if (limit) {
-    query = query.limit(limit)
-  }
-
-  const { data, error } = await query
-
-  if (error) throw error
-  return data || []
+  return db
+    .select()
+    .from(presets)
+    .where(type ? and(eq(presets.isPublic, true), eq(presets.type, type)) : eq(presets.isPublic, true))
+    .orderBy(desc(presets.downloads))
+    .limit(limit ?? 1000)
 }
 
 export async function getMyPresets(): Promise<Preset[]> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('presets')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data || []
+  return db
+    .select()
+    .from(presets)
+    .where(eq(presets.userId, user.id))
+    .orderBy(desc(presets.createdAt))
 }
 
 export async function deletePreset(id: string): Promise<boolean> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { error } = await supabase
-    .from('presets')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
-
-  if (error) throw error
+  await db
+    .delete(presets)
+    .where(and(eq(presets.id, id), eq(presets.userId, user.id)))
 
   revalidatePath('/presets')
   return true
@@ -550,106 +462,66 @@ export async function createCommunityPhrasePack(
   name: string,
   description: string,
   category: string,
-  phrases: any[],
+  phrases: unknown[],
   tags?: string[]
-): Promise<CommunityPhrasePack | null> {
-  const supabase = await createClient()
+): Promise<CommunityPhrasePack> {
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('community_phrase_packs')
-    .insert({
-      user_id: user.id,
-      name,
-      description,
-      category,
-      phrases,
-      tags: tags || [],
-    })
-    .select()
-    .single()
-
-  if (error) throw error
+  const [row] = await db
+    .insert(communityPhrasePacks)
+    .values({ userId: user.id, name, description, category, phrases, tags: tags ?? [] })
+    .returning()
 
   revalidatePath('/phrase-packs')
-  return data
+  return row
 }
 
 export async function getCommunityPhrasePacks(
   category?: string,
   limit?: number
 ): Promise<CommunityPhrasePack[]> {
-  const supabase = await createClient()
-
-  let query = supabase
-    .from('community_phrase_packs')
-    .select('*')
-    .eq('is_public', true)
-    .order('downloads', { ascending: false })
-
-  if (category) {
-    query = query.eq('category', category)
-  }
-
-  if (limit) {
-    query = query.limit(limit)
-  }
-
-  const { data, error } = await query
-
-  if (error) throw error
-  return data || []
+  return db
+    .select()
+    .from(communityPhrasePacks)
+    .where(
+      category
+        ? and(eq(communityPhrasePacks.isPublic, true), eq(communityPhrasePacks.category, category))
+        : eq(communityPhrasePacks.isPublic, true)
+    )
+    .orderBy(desc(communityPhrasePacks.downloads))
+    .limit(limit ?? 1000)
 }
 
 export async function getMyCommunityPhrasePacks(): Promise<CommunityPhrasePack[]> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('community_phrase_packs')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data || []
+  return db
+    .select()
+    .from(communityPhrasePacks)
+    .where(eq(communityPhrasePacks.userId, user.id))
+    .orderBy(desc(communityPhrasePacks.createdAt))
 }
 
 export async function deleteCommunityPhrasePack(id: string): Promise<boolean> {
-  const supabase = await createClient()
+  const user = await requireUser()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { error } = await supabase
-    .from('community_phrase_packs')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
-
-  if (error) throw error
+  await db
+    .delete(communityPhrasePacks)
+    .where(and(eq(communityPhrasePacks.id, id), eq(communityPhrasePacks.userId, user.id)))
 
   revalidatePath('/phrase-packs')
   return true
 }
 
-// ===== SHARE LINK GENERATION =====
+// ===== SHARE LINK =====
 
 export async function getShareUrl(languageId: string): Promise<string | null> {
-  const supabase = await createClient()
+  const [row] = await db
+    .select({ slug: languages.slug, isPublic: languages.isPublic })
+    .from(languages)
+    .where(eq(languages.id, languageId))
+    .limit(1)
 
-  const { data, error } = await supabase
-    .from('languages')
-    .select('slug, is_public')
-    .eq('id', languageId)
-    .single()
-
-  if (error || !data) return null
-  if (!data.is_public) return null
-
-  return `/l/${data.slug}`
+  if (!row || !row.isPublic) return null
+  return `/l/${row.slug}`
 }

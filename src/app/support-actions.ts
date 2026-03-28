@@ -1,7 +1,8 @@
 'use server'
 
 import { Resend } from 'resend'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 
 const SUPPORT_EMAIL = 'haines.corey@gmail.com'
 const FROM_EMAIL = 'Conlang Support <noreply@mail.conlang.app>'
@@ -46,9 +47,8 @@ export async function submitSupportRequest(
 
   // For logged-in users, read email from server session (never trust client).
   // For guests, use the email they submitted in the form.
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const userEmail = user?.email ?? guestEmail
+  const session = await auth.api.getSession({ headers: await headers() })
+  const userEmail = session?.user?.email ?? guestEmail
 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {

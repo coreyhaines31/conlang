@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Language, Json } from '@/lib/supabase/types'
+import { Language } from '@/lib/db/schema'
 import { LanguageDefinition, generateWords } from '@/lib/generator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -72,7 +72,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
       }
       onUpdate({
         ...language,
-        definition: newDefinition as unknown as Json,
+        definition: newDefinition as unknown,
       })
     }
   }

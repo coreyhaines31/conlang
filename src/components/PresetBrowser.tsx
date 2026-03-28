@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Preset } from '@/lib/supabase/types'
+import { Preset } from '@/lib/db/schema'
 import { getPresets, createPreset, deletePreset, getMyPresets } from '@/app/actions'
 import { LanguageDefinition } from '@/lib/generator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -251,7 +251,7 @@ export function PresetBrowser({
                             <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(preset.type)}`}>
                               {getTypeLabel(preset.type)}
                             </span>
-                            {preset.is_official && (
+                            {preset.isOfficial && (
                               <span className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground">
                                 Official
                               </span>
@@ -393,7 +393,7 @@ export function PresetBrowser({
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {preset.downloads} downloads • {preset.is_public ? 'Public' : 'Private'}
+                          {preset.downloads} downloads • {preset.isPublic ? 'Public' : 'Private'}
                         </p>
                       </div>
                       <Button

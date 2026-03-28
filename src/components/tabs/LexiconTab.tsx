@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { User } from '@supabase/supabase-js'
-import { LexiconEntry } from '@/lib/supabase/types'
+import { LexiconEntry } from '@/lib/db/schema'
+
+type AuthUser = { id: string; email?: string | null }
 import {
   createLexiconEntry,
   updateLexiconEntry,
@@ -34,7 +35,7 @@ interface LexiconTabProps {
   languageId?: string
   entries: LexiconEntry[]
   onEntriesChange: (entries: LexiconEntry[]) => void
-  user: User | null
+  user: AuthUser | null
 }
 
 export function LexiconTab({ languageId, entries, onEntriesChange, user }: LexiconTabProps) {
@@ -45,8 +46,8 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
   const filteredEntries = entries.filter(
     entry =>
       entry.gloss.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.phonemic_form?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.orthographic_form?.toLowerCase().includes(searchTerm.toLowerCase())
+      entry.phonemicForm?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.orthographicForm?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleSave = async (
@@ -196,12 +197,12 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
                 {filteredEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">{entry.gloss}</TableCell>
-                    <TableCell>{entry.part_of_speech || '-'}</TableCell>
+                    <TableCell>{entry.partOfSpeech || '-'}</TableCell>
                     <TableCell>
-                      <code className="text-sm">{entry.phonemic_form || '-'}</code>
+                      <code className="text-sm">{entry.phonemicForm || '-'}</code>
                     </TableCell>
                     <TableCell>
-                      <code className="text-sm">{entry.orthographic_form || '-'}</code>
+                      <code className="text-sm">{entry.orthographicForm || '-'}</code>
                     </TableCell>
                     <TableCell>
                       {entry.tags && entry.tags.length > 0 ? (
@@ -266,10 +267,10 @@ function EntryForm({
   onCancel: () => void
 }) {
   const [gloss, setGloss] = useState(entry?.gloss || '')
-  const [partOfSpeech, setPartOfSpeech] = useState(entry?.part_of_speech || '')
-  const [phonemicForm, setPhonemicForm] = useState(entry?.phonemic_form || '')
+  const [partOfSpeech, setPartOfSpeech] = useState(entry?.partOfSpeech || '')
+  const [phonemicForm, setPhonemicForm] = useState(entry?.phonemicForm || '')
   const [orthographicForm, setOrthographicForm] = useState(
-    entry?.orthographic_form || ''
+    entry?.orthographicForm || ''
   )
   const [tagsInput, setTagsInput] = useState(
     entry?.tags?.join(', ') || ''

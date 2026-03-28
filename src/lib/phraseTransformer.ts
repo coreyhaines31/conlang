@@ -11,7 +11,7 @@ import {
   DEFAULT_SYNTAX,
   positionAdjective,
 } from './morphology'
-import { LexiconEntry } from './supabase/types'
+import { LexiconEntry } from './db/schema'
 import { GrammaticalPhrase } from './phrases'
 
 export interface TransformedWord {
@@ -239,8 +239,8 @@ export function transformPhrase(
     let baseForm: string
     let isFromLexicon: boolean
     
-    if (lexEntry && lexEntry.phonemic_form) {
-      baseForm = lexEntry.phonemic_form
+    if (lexEntry && lexEntry.phonemicForm) {
+      baseForm = lexEntry.phonemicForm
       isFromLexicon = true
     } else {
       // Generate a placeholder word
@@ -321,10 +321,10 @@ export function transformSimplePhrase(
   for (const gloss of glosses) {
     const entry = lexiconMap.get(gloss.toLowerCase())
     
-    if (entry && entry.phonemic_form) {
+    if (entry && entry.phonemicForm) {
       results.push({
-        phonemic: entry.phonemic_form,
-        orthographic: entry.orthographic_form || applyOrthography(entry.phonemic_form, orthography),
+        phonemic: entry.phonemicForm,
+        orthographic: entry.orthographicForm || applyOrthography(entry.phonemicForm, orthography),
       })
     } else {
       const generated = generateWord(gloss)
