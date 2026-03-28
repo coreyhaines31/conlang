@@ -278,21 +278,23 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
                       <div className="flex items-center gap-1">
                         <button
                           onClick={(e) => toggleWordFavorite(i, e)}
-                          className={`p-1 rounded hover:bg-secondary ${
+                          className={`p-1 rounded hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             word.favorite ? 'text-amber-500' : 'text-muted-foreground'
                           }`}
-                          title={word.favorite ? 'Remove from favorites' : 'Add to favorites'}
+                          aria-label={word.favorite ? 'Remove from favorites' : 'Add to favorites'}
+                          aria-pressed={word.favorite}
                         >
-                          <Star className={`h-4 w-4 ${word.favorite ? 'fill-current' : ''}`} />
+                          <Star className={`h-4 w-4 ${word.favorite ? 'fill-current' : ''}`} aria-hidden="true" />
                         </button>
                         <button
                           onClick={(e) => toggleWordLock(i, e)}
-                          className={`p-1 rounded hover:bg-secondary ${
+                          className={`p-1 rounded hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             word.locked ? 'text-blue-500' : 'text-muted-foreground'
                           }`}
-                          title={word.locked ? 'Unlock' : 'Lock (keep on regenerate)'}
+                          aria-label={word.locked ? 'Unlock word' : 'Lock word (keep on regenerate)'}
+                          aria-pressed={word.locked}
                         >
-                          {word.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                          {word.locked ? <Lock className="h-4 w-4" aria-hidden="true" /> : <Unlock className="h-4 w-4" aria-hidden="true" />}
                         </button>
                       </div>
                     </div>

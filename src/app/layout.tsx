@@ -24,6 +24,9 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-touch-icon.svg',
   },
+  other: {
+    'color-scheme': 'light dark',
+  },
   openGraph: {
     title: 'Conlang - Construct Your Language',
     description: 'Build constructed languages with instant feedback. Define sounds, create words, and bring your language to life.',
@@ -55,7 +58,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" className="light" style={{ colorScheme: 'light dark' }}>
+      <head>
+        <link rel="preconnect" href="https://cdn.usefathom.com" />
+        <meta name="theme-color" content="hsl(0 0% 100%)" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="hsl(240 10% 3.9%)" media="(prefers-color-scheme: dark)" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

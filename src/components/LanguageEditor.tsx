@@ -440,7 +440,13 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
           <span className="font-semibold text-lg">Conlang</span>
         </a>
-        <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+        >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
@@ -465,7 +471,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         {/* Logo & Header - Hidden on mobile since we have the mobile header */}
         <div className="p-4 border-b hidden md:block">
           <a href="/" className="flex items-center gap-2 mb-3">
-            <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
+            <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" width={24} height={24} />
             <span className="font-semibold text-lg">Conlang</span>
           </a>
           <LanguageSelector
@@ -554,7 +560,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               variant="outline"
               size="sm"
             >
-              Local
+              Save Local
             </Button>
             <Button
               onClick={handleSaveToAccount}
@@ -563,13 +569,19 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               variant="default"
               size="sm"
             >
-              {saving ? '...' : 'Save'}
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </div>
 
           {user && currentLanguage?.id && (
             <div className="flex gap-1">
-              <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm" title={currentLanguage.isPublic ? 'Make Private' : 'Make Public'}>
+              <Button
+                onClick={handleTogglePublic}
+                className="flex-1"
+                variant="outline"
+                size="sm"
+                aria-label={currentLanguage.isPublic ? 'Make private' : 'Make public'}
+              >
                 {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
               </Button>
               <ShareDialog
@@ -578,10 +590,22 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 isPublic={currentLanguage.isPublic || false}
                 onTogglePublic={handleTogglePublic}
               />
-              <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm" title="Duplicate">
+              <Button
+                onClick={handleDuplicate}
+                disabled={saving}
+                variant="outline"
+                size="sm"
+                aria-label="Duplicate language"
+              >
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button onClick={handleDelete} variant="outline" size="sm" className="text-destructive" title="Delete">
+              <Button
+                onClick={handleDelete}
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                aria-label="Delete language"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -598,7 +622,13 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 <div className="text-sm font-medium truncate">{user.email?.split('@')[0]}</div>
                 <div className="text-xs text-muted-foreground truncate">{user.email}</div>
               </div>
-              <Button onClick={handleLogout} variant="ghost" size="icon" className="shrink-0 h-8 w-8" title="Sign out">
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="icon"
+                className="shrink-0 h-8 w-8"
+                aria-label="Sign out"
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -630,7 +660,9 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               
               return (
                 <div>
+                  <label htmlFor="language-name" className="sr-only">Language name</label>
                   <Input
+                    id="language-name"
                     type="text"
                     value={currentLanguage.name || ''}
                     onChange={(e) =>
