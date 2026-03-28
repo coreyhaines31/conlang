@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { LexiconEntry } from '@/lib/supabase/types'
+import { LexiconEntry } from '@/lib/db/schema'
 import { LanguageDefinition, generateWords } from '@/lib/generator'
 import { PHRASE_PACKS, Phrase, RenderedWord, RenderedPhrase, GRAMMATICAL_PHRASES, GrammaticalPhrase } from '@/lib/phrases'
 import { transformPhrase, TransformedPhrase } from '@/lib/phraseTransformer'
@@ -61,8 +61,8 @@ export function SamplePhrasesTab({
       if (entry) {
         words.push({
           gloss,
-          phonemic: entry.phonemic_form,
-          orthographic: entry.orthographic_form,
+          phonemic: entry.phonemicForm,
+          orthographic: entry.orthographicForm,
           isGenerated: false,
         })
       } else {

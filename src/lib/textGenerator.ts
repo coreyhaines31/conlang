@@ -14,7 +14,7 @@ import {
   applyAffix, 
   DEFAULT_SYNTAX,
 } from './morphology'
-import { LexiconEntry } from './supabase/types'
+import { LexiconEntry } from './db/schema'
 
 // Grammatical features that can be annotated on glosses
 export interface GrammaticalFeatures {
@@ -305,8 +305,8 @@ export function generateFromStructured(
       let baseForm: string
       let isFromLexicon: boolean
       
-      if (lexEntry && lexEntry.phonemic_form) {
-        baseForm = lexEntry.phonemic_form
+      if (lexEntry && lexEntry.phonemicForm) {
+        baseForm = lexEntry.phonemicForm
         isFromLexicon = true
         totalFromLexicon++
       } else {

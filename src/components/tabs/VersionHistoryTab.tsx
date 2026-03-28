@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Snapshot } from '@/lib/supabase/types'
+import { Snapshot } from '@/lib/db/schema'
 import { createSnapshot, getSnapshots, deleteSnapshot, restoreSnapshot } from '@/app/actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -211,7 +211,7 @@ export function VersionHistoryTab({
                         {snapshot.name || 'Unnamed Snapshot'}
                       </span>
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-                        {snapshot.lexicon_count} words
+                        {snapshot.lexiconCount} words
                       </span>
                     </div>
                     {snapshot.description && (
@@ -220,7 +220,7 @@ export function VersionHistoryTab({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(snapshot.created_at)}
+                      {formatDate(snapshot.createdAt.toISOString())}
                     </p>
                   </div>
                   <div className="flex gap-2">

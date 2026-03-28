@@ -6,7 +6,7 @@ import {
 } from './phraseTransformer'
 import { LanguageDefinition } from './generator'
 import { GrammaticalPhrase } from './phrases'
-import { LexiconEntry } from './supabase/types'
+import { LexiconEntry } from './db/schema'
 
 // Mock generate function that creates predictable output
 const mockGenerateWord = (gloss: string) => ({
@@ -44,27 +44,27 @@ describe('transformPhrase', () => {
   const testLexicon: LexiconEntry[] = [
     {
       id: '1',
-      language_id: 'test',
+      languageId: 'test',
       gloss: 'cat',
-      phonemic_form: 'kata',
-      orthographic_form: 'kata',
-      part_of_speech: 'noun',
+      phonemicForm: 'kata',
+      orthographicForm: 'kata',
+      partOfSpeech: 'noun',
       tags: [],
       notes: null,
-      created_at: '',
-      updated_at: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     {
       id: '2',
-      language_id: 'test',
+      languageId: 'test',
       gloss: 'see',
-      phonemic_form: 'mira',
-      orthographic_form: 'mira',
-      part_of_speech: 'verb',
+      phonemicForm: 'mira',
+      orthographicForm: 'mira',
+      partOfSpeech: 'verb',
       tags: [],
       notes: null,
-      created_at: '',
-      updated_at: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ]
 
@@ -264,27 +264,27 @@ describe('transformSimplePhrase', () => {
   const testLexicon: LexiconEntry[] = [
     {
       id: '1',
-      language_id: 'test',
+      languageId: 'test',
       gloss: 'hello',
-      phonemic_form: 'kota',
-      orthographic_form: 'cota',
-      part_of_speech: null,
+      phonemicForm: 'kota',
+      orthographicForm: 'cota',
+      partOfSpeech: null,
       tags: [],
       notes: null,
-      created_at: '',
-      updated_at: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     {
       id: '2',
-      language_id: 'test',
+      languageId: 'test',
       gloss: 'world',
-      phonemic_form: 'pako',
-      orthographic_form: null,
-      part_of_speech: null,
+      phonemicForm: 'pako',
+      orthographicForm: null,
+      partOfSpeech: null,
       tags: [],
       notes: null,
-      created_at: '',
-      updated_at: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ]
 

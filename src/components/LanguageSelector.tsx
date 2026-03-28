@@ -1,6 +1,6 @@
 'use client'
 
-import { Language } from '@/lib/supabase/types'
+import { Language } from '@/lib/db/schema'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -88,7 +88,7 @@ export function LanguageSelector({
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="truncate">{lang.name}</span>
-                  {lang.is_public ? (
+                  {lang.isPublic ? (
                     <Globe className="h-3 w-3 text-muted-foreground" />
                   ) : (
                     <Lock className="h-3 w-3 text-muted-foreground" />

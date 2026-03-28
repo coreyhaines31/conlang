@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CommunityPhrasePack } from '@/lib/supabase/types'
+import { CommunityPhrasePack } from '@/lib/db/schema'
 import { 
   getCommunityPhrasePacks, 
   createCommunityPhrasePack, 
@@ -243,7 +243,7 @@ export function CommunityPhrasesTab({
                             <span className="text-xs px-2 py-0.5 rounded bg-secondary">
                               {pack.category}
                             </span>
-                            {pack.is_official && (
+                            {pack.isOfficial && (
                               <span className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground">
                                 Official
                               </span>
@@ -394,7 +394,7 @@ The king is wise`}
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {(pack.phrases as any[]).length} phrases • {pack.downloads} downloads • {pack.is_public ? 'Public' : 'Private'}
+                          {(pack.phrases as any[]).length} phrases • {pack.downloads} downloads • {pack.isPublic ? 'Public' : 'Private'}
                         </p>
                       </div>
                       <Button
