@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User } from '@supabase/supabase-js'
-import { Language, LexiconEntry } from '@/lib/supabase/types'
+import { Language, LexiconEntry } from '@/lib/db/schema'
 import { AuthModal } from './auth/AuthModal'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth-client'
+
+type AuthUser = { id: string; email?: string | null }
 import {
   saveLanguage,
   updateLanguage,
@@ -37,19 +38,19 @@ import { PresetBrowser } from './PresetBrowser'
 import { ShareDialog } from './ShareDialog'
 import { CommunityPhrasesTab } from './tabs/CommunityPhrasesTab'
 import { TextGeneratorTab } from './tabs/TextGeneratorTab'
-import { Preset } from '@/lib/supabase/types'
+import { Preset } from '@/lib/db/schema'
 import { LanguageSelector } from './LanguageSelector'
 import { SupportWidget } from './SupportWidget'
 
 interface LanguageEditorProps {
   initialLanguages: Language[]
-  user: User | null
+  user: AuthUser | null
 }
 
 const EMPTY_LANGUAGE: Partial<Language> = {
   name: '',
   seed: Math.floor(Math.random() * 2147483647),
-  generator_version: '1.0.0',
+  generatorVersion: '1.0.0',
   definition: {
     phonology: {
       consonants: [],
@@ -74,8 +75,6 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const supabase = createClient()
-
   // Load drafts from localStorage on mount
   useEffect(() => {
     // Load all local drafts
@@ -195,7 +194,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     try {
       const definition = currentLanguage.definition as LanguageDefinition
       const seed = currentLanguage.seed || Math.floor(Math.random() * 2147483647)
-      const generatorVersion = currentLanguage.generator_version || '1.0.0'
+      const generatorVersion = currentLanguage.generatorVersion || '1.0.0'
 
       if (currentLanguage.id) {
         // Update existing
@@ -205,7 +204,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           definition,
           seed,
           generatorVersion,
-          currentLanguage.is_public || false
+          currentLanguage.isPublic || false
         )
         if (updated) {
           setLanguages(prev => prev.map(l => (l.id === updated.id ? updated : l)))
@@ -243,7 +242,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await authClient.signOut()
     window.location.reload()
   }
 
@@ -252,7 +251,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
     const definition = currentLanguage.definition as LanguageDefinition
     const seed = currentLanguage.seed || Math.floor(Math.random() * 2147483647)
-    const generatorVersion = currentLanguage.generator_version || '1.0.0'
+    const generatorVersion = currentLanguage.generatorVersion || '1.0.0'
 
     const updated = await updateLanguage(
       currentLanguage.id!,
@@ -260,7 +259,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       definition,
       seed,
       generatorVersion,
-      !currentLanguage.is_public
+      !currentLanguage.isPublic
     )
     if (updated) {
       setLanguages(prev => prev.map(l => (l.id === updated.id ? updated : l)))
@@ -305,7 +304,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     const exportData = {
       name: currentLanguage.name,
       seed: currentLanguage.seed,
-      generator_version: currentLanguage.generator_version,
+      generator_version: currentLanguage.generatorVersion,
       definition: currentLanguage.definition,
       lexicon: lexiconEntries,
     }
@@ -338,7 +337,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           const imported: Partial<Language> = {
             name: `${data.name} (Imported)`,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
-            generator_version: data.generator_version || '1.0.0',
+            generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
             definition: data.definition,
           }
           setCurrentLanguage(imported)
@@ -348,7 +347,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           const imported: Partial<Language> = {
             name: data.name,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
-            generator_version: data.generator_version || '1.0.0',
+            generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
             definition: data.definition,
           }
           setCurrentLanguage(imported)
@@ -520,7 +519,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                     <div className="flex flex-col items-start w-full">
                       <div className="font-medium text-sm truncate w-full">{lang.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
-                      {lang.is_public ? <><Globe className="h-3 w-3" /> Public</> : <><Lock className="h-3 w-3" /> Private</>}
+                      {lang.isPublic ? <><Globe className="h-3 w-3" /> Public</> : <><Lock className="h-3 w-3" /> Private</>}
                     </div>
                     </div>
                   </Button>
@@ -570,13 +569,13 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
           {user && currentLanguage?.id && (
             <div className="flex gap-1">
-              <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm" title={currentLanguage.is_public ? 'Make Private' : 'Make Public'}>
-                {currentLanguage.is_public ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              <Button onClick={handleTogglePublic} className="flex-1" variant="outline" size="sm" title={currentLanguage.isPublic ? 'Make Private' : 'Make Public'}>
+                {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
               </Button>
               <ShareDialog
                 languageSlug={currentLanguage.slug || null}
                 languageName={currentLanguage.name || 'My Language'}
-                isPublic={currentLanguage.is_public || false}
+                isPublic={currentLanguage.isPublic || false}
                 onTogglePublic={handleTogglePublic}
               />
               <Button onClick={handleDuplicate} disabled={saving} variant="outline" size="sm" title="Duplicate">
@@ -640,7 +639,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                     placeholder="Language Name"
                     className="text-2xl font-bold border-none shadow-none px-0 h-auto"
                   />
-                  {currentLanguage.slug && currentLanguage.is_public && typeof window !== 'undefined' && (
+                  {currentLanguage.slug && currentLanguage.isPublic && typeof window !== 'undefined' && (
                     <div className="text-sm text-muted-foreground mt-1">
                       <a
                         href={`/l/${currentLanguage.slug}`}
@@ -667,15 +666,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                     ? async (words) => {
                         const newEntries = words.map((w, i) => ({
                           id: `temp-${Date.now()}-${i}`,
-                          language_id: currentLanguage.id!,
+                          languageId: currentLanguage.id!,
                           gloss: '',
-                          part_of_speech: null,
-                          phonemic_form: w.phonemic,
-                          orthographic_form: w.orthographic,
+                          partOfSpeech: null,
+                          phonemicForm: w.phonemic,
+                          orthographicForm: w.orthographic,
                           tags: [],
                           notes: null,
-                          created_at: new Date().toISOString(),
-                          updated_at: new Date().toISOString(),
+                          createdAt: new Date(),
+                          updatedAt: new Date(),
                         }))
                         setLexiconEntries(prev => [...prev, ...newEntries])
                         setActiveTab('lexicon')
@@ -723,15 +722,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 onAddToLexicon={(entries) => {
                   const newEntries = entries.map((e, i) => ({
                     id: `temp-phrase-${Date.now()}-${i}`,
-                    language_id: currentLanguage.id || '',
+                    languageId: currentLanguage.id || '',
                     gloss: e.gloss,
-                    part_of_speech: null,
-                    phonemic_form: e.phonemic,
-                    orthographic_form: e.orthographic,
+                    partOfSpeech: null,
+                    phonemicForm: e.phonemic,
+                    orthographicForm: e.orthographic,
                     tags: [],
                     notes: 'Added from Sample Phrases',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                   }))
                   setLexiconEntries(prev => [...prev, ...newEntries])
                   setActiveTab('lexicon')
@@ -755,15 +754,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
                 onAddToLexicon={(entries) => {
                   const newEntries = entries.map((e, i) => ({
                     id: `temp-name-${Date.now()}-${i}`,
-                    language_id: currentLanguage.id || '',
+                    languageId: currentLanguage.id || '',
                     gloss: e.gloss,
-                    part_of_speech: 'proper noun',
-                    phonemic_form: e.phonemic,
-                    orthographic_form: e.orthographic,
+                    partOfSpeech: 'proper noun',
+                    phonemicForm: e.phonemic,
+                    orthographicForm: e.orthographic,
                     tags: ['name'],
                     notes: 'Generated name',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                   }))
                   setLexiconEntries(prev => [...prev, ...newEntries])
                   setActiveTab('lexicon')

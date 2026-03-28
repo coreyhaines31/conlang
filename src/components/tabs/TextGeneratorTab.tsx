@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { LanguageDefinition } from '@/lib/generator'
-import { LexiconEntry } from '@/lib/supabase/types'
+import { LexiconEntry } from '@/lib/db/schema'
 import {
   GlossWord,
   GlossClause,

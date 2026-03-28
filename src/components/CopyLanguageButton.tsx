@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
+
+type AuthUser = { id: string; email?: string | null }
 import { copyPublicLanguage } from '@/app/actions'
 import { AuthModal } from './auth/AuthModal'
 
 interface CopyLanguageButtonProps {
   languageId: string
-  user: User | null
+  user: AuthUser | null
 }
 
 export function CopyLanguageButton({ languageId, user }: CopyLanguageButtonProps) {
