@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
-import { eq, asc, desc, and } from 'drizzle-orm'
+import { eq, asc, desc, and, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
   languages,
@@ -214,7 +214,15 @@ export async function createLexiconEntry(
   tags?: string[],
   notes?: string
 ): Promise<LexiconEntry> {
-  await requireUser()
+  const user = await requireUser()
+
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
+    .limit(1)
+
+  if (!lang) throw new Error('Language not found')
 
   const [row] = await db
     .insert(lexiconEntries)
@@ -242,7 +250,17 @@ export async function updateLexiconEntry(
   tags?: string[],
   notes?: string
 ): Promise<LexiconEntry> {
-  await requireUser()
+  const user = await requireUser()
+
+  // Verify ownership via join
+  const [existing] = await db
+    .select({ id: lexiconEntries.id })
+    .from(lexiconEntries)
+    .innerJoin(languages, and(eq(languages.id, lexiconEntries.languageId), eq(languages.userId, user.id)))
+    .where(eq(lexiconEntries.id, id))
+    .limit(1)
+
+  if (!existing) throw new Error('Entry not found')
 
   const [row] = await db
     .update(lexiconEntries)
@@ -265,7 +283,17 @@ export async function updateLexiconEntry(
 }
 
 export async function deleteLexiconEntry(id: string): Promise<boolean> {
-  await requireUser()
+  const user = await requireUser()
+
+  // Verify ownership via join before deleting
+  const [existing] = await db
+    .select({ id: lexiconEntries.id })
+    .from(lexiconEntries)
+    .innerJoin(languages, and(eq(languages.id, lexiconEntries.languageId), eq(languages.userId, user.id)))
+    .where(eq(lexiconEntries.id, id))
+    .limit(1)
+
+  if (!existing) throw new Error('Entry not found')
 
   await db.delete(lexiconEntries).where(eq(lexiconEntries.id, id))
 
@@ -298,8 +326,8 @@ export async function createSnapshot(
 
   if (!lang) throw new Error('Language not found')
 
-  const entryCount = await db
-    .select({ id: lexiconEntries.id })
+  const [{ entryCount }] = await db
+    .select({ entryCount: count() })
     .from(lexiconEntries)
     .where(eq(lexiconEntries.languageId, languageId))
 
@@ -310,7 +338,7 @@ export async function createSnapshot(
       name: name ?? null,
       description: description ?? null,
       definition: lang.definition,
-      lexiconCount: entryCount.length,
+      lexiconCount: entryCount,
     })
     .returning()
 
@@ -327,7 +355,24 @@ export async function getSnapshots(languageId: string): Promise<Snapshot[]> {
 }
 
 export async function deleteSnapshot(id: string): Promise<boolean> {
-  await requireUser()
+  const user = await requireUser()
+
+  const [snapshot] = await db
+    .select({ languageId: snapshots.languageId })
+    .from(snapshots)
+    .where(eq(snapshots.id, id))
+    .limit(1)
+
+  if (!snapshot) throw new Error('Snapshot not found')
+
+  // Verify the snapshot belongs to a language owned by the user
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, snapshot.languageId), eq(languages.userId, user.id)))
+    .limit(1)
+
+  if (!lang) throw new Error('Snapshot not found')
 
   await db.delete(snapshots).where(eq(snapshots.id, id))
 
@@ -382,14 +427,12 @@ export async function getPresets(
   type?: 'phonology' | 'phonotactics' | 'morphology' | 'full',
   limit?: number
 ): Promise<Preset[]> {
-  const query = db
+  return db
     .select()
     .from(presets)
     .where(type ? and(eq(presets.isPublic, true), eq(presets.type, type)) : eq(presets.isPublic, true))
     .orderBy(desc(presets.downloads))
-
-  if (limit) return (query as any).limit(limit)
-  return query
+    .limit(limit ?? 1000)
 }
 
 export async function getMyPresets(): Promise<Preset[]> {
@@ -437,7 +480,7 @@ export async function getCommunityPhrasePacks(
   category?: string,
   limit?: number
 ): Promise<CommunityPhrasePack[]> {
-  const query = db
+  return db
     .select()
     .from(communityPhrasePacks)
     .where(
@@ -446,9 +489,7 @@ export async function getCommunityPhrasePacks(
         : eq(communityPhrasePacks.isPublic, true)
     )
     .orderBy(desc(communityPhrasePacks.downloads))
-
-  if (limit) return (query as any).limit(limit)
-  return query
+    .limit(limit ?? 1000)
 }
 
 export async function getMyCommunityPhrasePacks(): Promise<CommunityPhrasePack[]> {
