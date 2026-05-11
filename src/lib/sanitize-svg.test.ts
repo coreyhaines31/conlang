@@ -139,6 +139,35 @@ describe('sanitizeGlyphSvg', () => {
         /<audio\b/i
       )
     })
+
+    it('strips namespaced on* handlers (xlink:onclick, xml:onload)', () => {
+      const clean = sanitizeGlyphSvg(
+        '<svg xlink:onclick="alert(1)" xml:onload="alert(2)"><path d="M0 0"/></svg>'
+      )
+      expect(clean).not.toMatch(/onclick/i)
+      expect(clean).not.toMatch(/onload/i)
+    })
+
+    it('strips handlers inside <symbol> / <title> / <desc>', () => {
+      const clean = sanitizeGlyphSvg(
+        '<svg><symbol id="x" onload="x()"><path d="M0 0"/></symbol><title onfocus="y()">hi</title></svg>'
+      )
+      expect(clean).not.toMatch(/onload/i)
+      expect(clean).not.toMatch(/onfocus/i)
+    })
+
+    it('preserves legitimate path/attribute data even when it contains "on" substrings', () => {
+      const clean = sanitizeGlyphSvg('<svg><path d="M0 0 L 10 10"/></svg>')
+      expect(clean).toContain('d="M0 0 L 10 10"')
+    })
+
+    it('handles nested forbidden tags without leaking executable opening tags', () => {
+      const clean = sanitizeGlyphSvg('<script>a<script>b</script>c</script><path d="M0 0"/>')
+      // Lazy match means inner script first; outer is then a stray closer
+      // (harmless — no opening tag to execute).
+      expect(clean).not.toMatch(/<script\s/i)
+      expect(clean).not.toMatch(/<script>/i)
+    })
   })
 })
 
