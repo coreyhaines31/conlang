@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
 
 // Rate limit: 10 AI glyph generations per minute per IP
 const RATE_LIMIT_CONFIG = {
@@ -98,7 +99,7 @@ The glyph should be ${styleDescription}.`
     })
 
     const svgContent = response.choices[0]?.message?.content || ''
-    
+
     // Extract just the SVG if wrapped in markdown
     let cleanSvg = svgContent
     const svgMatch = svgContent.match(/<svg[\s\S]*<\/svg>/i)
@@ -114,8 +115,13 @@ The glyph should be ${styleDescription}.`
       )
     }
 
+    // Even though the model is told to output paths-only, sanitize before
+    // we hand back something the client will eventually render with
+    // dangerouslySetInnerHTML.
+    const safeSvg = sanitizeGlyphSvg(cleanSvg)
+
     return NextResponse.json(
-      { svg: cleanSvg },
+      { svg: safeSvg },
       {
         headers: {
           'X-RateLimit-Limit': String(rateLimitResult.limit),
@@ -124,10 +130,10 @@ The glyph should be ${styleDescription}.`
         }
       }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Glyph generation error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to generate glyph' },
+      { error: 'Failed to generate glyph' },
       { status: 500 }
     )
   }

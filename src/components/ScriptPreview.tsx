@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { WritingSystem, renderTextAsGlyphs } from '@/lib/script'
+import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
 
 interface ScriptPreviewProps {
   text: string
@@ -49,7 +50,7 @@ export function ScriptPreview({ text, writingSystem, className = '' }: ScriptPre
               width: writingSystem.defaultGlyphSize,
               height: writingSystem.defaultGlyphSize,
             }}
-            dangerouslySetInnerHTML={{ __html: glyph.svg }}
+            dangerouslySetInnerHTML={{ __html: sanitizeGlyphSvg(glyph.svg) }}
             title={item.char}
           />
         )
