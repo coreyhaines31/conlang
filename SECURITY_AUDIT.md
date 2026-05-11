@@ -62,7 +62,14 @@ Since Better Auth's session cookie is `HttpOnly`, direct cookie theft is mitigat
 ```
 
 **Remediation:**
-Sanitize SVG with a robust library (`isomorphic-dompurify`) at both write-time (in server actions, so bad data never enters the DB) and render-time (defense in depth). A new helper `src/lib/sanitize-svg.ts` strips `<script>`, event handlers, `<foreignObject>`, `javascript:` URLs, and other dangerous constructs while keeping legitimate glyph SVG intact.
+A new helper `src/lib/sanitize-svg.ts` strips `<script>`, event handlers, `<foreignObject>`, `javascript:` URLs, and other dangerous constructs while keeping legitimate glyph SVG intact. Called both at write-time (in server actions, so bad data never enters the DB) and at render-time (defense in depth).
+
+**Codex second-pass review (post-initial-fix) found three bypasses** in the regex-based sanitizer:
+- `<img/onerror=alert(1) src=x>` — the `/` is a valid HTML attribute-name separator, but the event-handler regex was anchored on `\s` only.
+- `<svg><path d="M0 0"/onmouseover=alert(1)></svg>` — same trick, separator between attributes.
+- `<img/onload=... src=data:image/gif;base64,...>` — HTML `img` was not in the forbidden-tag list (only SVG `image` was).
+
+All three are fixed: separator class is now `[/\s]` for event-handler / style / dangerous-href patterns, HTML `img`/`body`/`video`/`audio`/etc. are added to the forbidden-tag list, and a final fallback pass strips any `on*=` that slips through. Six regression tests pin the fix. As additional defense in depth, `script-src-attr 'none'` is now in CSP — modern browsers will refuse to fire inline event handlers even if a future bypass smuggles one through.
 
 ---
 

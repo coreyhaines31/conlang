@@ -1,18 +1,27 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Strict CSP for app routes. We don't use 'unsafe-inline' for scripts; the
-// only scripts loaded are first-party, the Fathom analytics tag, and the
-// Sentry tunnel. 'unsafe-inline' for style is regrettable but required by
-// Next.js + Tailwind v4 + Radix UI today.
+// CSP for app routes. We can't drop 'unsafe-inline' from script execution
+// today because Next.js 16 emits inline bootstrap scripts without a nonce
+// (would require middleware-driven nonces). But we can still block inline
+// event-handler ATTRIBUTES with `script-src-attr 'none'`, which is the
+// key defense-in-depth against an HTML-injection sanitizer bypass: even
+// if a malicious on*= attribute reaches the DOM, modern browsers refuse
+// to fire it. 'unsafe-inline' for style is required by Tailwind v4 +
+// Radix UI runtime styling.
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://cdn.usefathom.com",
+  "script-src-elem 'self' 'unsafe-inline' https://cdn.usefathom.com",
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://cdn.usefathom.com",
   "font-src 'self' data:",
   "connect-src 'self' https://cdn.usefathom.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+  "frame-src 'none'",
   "frame-ancestors 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",

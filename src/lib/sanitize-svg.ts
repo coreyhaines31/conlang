@@ -11,7 +11,15 @@
 // All call sites must use this function before passing untrusted SVG to
 // dangerouslySetInnerHTML or before persisting it to the database.
 
+// HTML parses both ASCII whitespace AND `/` as the separator between a tag
+// name and its first attribute, and between attributes. Anchoring stripper
+// patterns only on `\s` lets `<img/onerror=alert(1)>` slip through, which
+// the HTML parser then normalizes into a real onerror= attribute. We use
+// `[/\s]` everywhere we need to detect "start of an attribute slot".
+const ATTR_SEP = '[/\\s]'
+
 const FORBIDDEN_TAGS = [
+  // Script-execution vectors
   'script',
   'foreignObject',
   'iframe',
@@ -28,11 +36,28 @@ const FORBIDDEN_TAGS = [
   'style',
   'link',
   'meta',
-  'use', // can reference external resources / cross-origin includes
-  'image', // can fetch arbitrary URLs (SSRF-ish)
+  // HTML elements that can fire events / leak data when injected into a
+  // dangerouslySetInnerHTML context, even though they are not valid SVG
+  // children. The HTML parser is tolerant and will instantiate them.
+  'img',
+  'body',
+  'html',
+  'head',
   'video',
   'audio',
   'source',
+  'track',
+  'picture',
+  'details',
+  'summary',
+  'marquee',
+  'template',
+  'slot',
+  'frame',
+  'frameset',
+  // SVG elements that can fetch external resources or include arbitrary XML
+  'use', // can reference external resources / cross-origin includes
+  'image', // SVG image — can fetch arbitrary URLs (SSRF-ish)
 ]
 
 const FORBIDDEN_TAG_PATTERNS = FORBIDDEN_TAGS.map(
@@ -47,15 +72,29 @@ const PROLOGUE_PATTERNS = [
   /<!--[\s\S]*?-->/g,
 ]
 
-// Strip on*= event handlers in any attribute position.
-const EVENT_HANDLER_PATTERN = /\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
+// Strip on*= event handlers anywhere they appear in attribute position.
+const EVENT_HANDLER_PATTERN = new RegExp(
+  `${ATTR_SEP}on[a-z]+\\s*=\\s*("[^"]*"|'[^']*'|[^\\s>]+)`,
+  'gi'
+)
 
 // Strip style attributes (defense in depth — CSS in SVG can carry url() pointers).
-const STYLE_ATTR_PATTERN = /\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
+const STYLE_ATTR_PATTERN = new RegExp(
+  `${ATTR_SEP}style\\s*=\\s*("[^"]*"|'[^']*'|[^\\s>]+)`,
+  'gi'
+)
 
 // Strip any href / xlink:href whose value contains a script-y URL scheme.
-const DANGEROUS_HREF_PATTERN =
-  /\s(?:xlink:)?href\s*=\s*("(?:\s*(?:javascript|vbscript|data|file)\s*:[^"]*)"|'(?:\s*(?:javascript|vbscript|data|file)\s*:[^']*)')/gi
+const DANGEROUS_HREF_PATTERN = new RegExp(
+  `${ATTR_SEP}(?:xlink:)?href\\s*=\\s*("(?:\\s*(?:javascript|vbscript|data|file)\\s*:[^"]*)"|'(?:\\s*(?:javascript|vbscript|data|file)\\s*:[^']*)')`,
+  'gi'
+)
+
+// Second-pass fallback: strip any leftover on*= even when not preceded by an
+// attribute separator (e.g. an unusual tag normalization the first pass
+// missed). It is OK to be over-aggressive here because legitimate SVG glyph
+// markup never contains "on*=" as text content.
+const EVENT_HANDLER_FALLBACK_PATTERN = /on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
 
 export function sanitizeGlyphSvg(input: unknown): string {
   if (typeof input !== 'string') return ''
@@ -71,6 +110,10 @@ export function sanitizeGlyphSvg(input: unknown): string {
   // Strip any leftover script-y URL even outside href= contexts (e.g. in
   // attribute values we did not enumerate).
   svg = svg.replace(/\b(?:javascript|vbscript)\s*:/gi, 'about:blank#')
+
+  // Final safety net: catch any remaining on*= attribute that escaped the
+  // separator-anchored pass.
+  svg = svg.replace(EVENT_HANDLER_FALLBACK_PATTERN, '')
 
   return svg.trim()
 }

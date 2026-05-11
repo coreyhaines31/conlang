@@ -90,6 +90,56 @@ describe('sanitizeGlyphSvg', () => {
     const twice = sanitizeGlyphSvg(once)
     expect(once).toBe(twice)
   })
+
+  describe('attribute-separator bypasses (codex finding)', () => {
+    // HTML parses `/` as an attribute-name separator. Anchoring strippers
+    // only on whitespace lets <img/onerror=...> through. These tests pin
+    // the fix in place.
+    it('strips event handlers separated by `/` from the tag name', () => {
+      const dirty = '<svg></svg><img/onerror=alert(1) src=x>'
+      const clean = sanitizeGlyphSvg(dirty)
+      expect(clean).not.toMatch(/onerror/i)
+      // HTML <img> is also stripped because it has no business in glyph SVG.
+      expect(clean).not.toMatch(/<img\b/i)
+    })
+
+    it('strips event handlers separated by `/` from a previous attribute', () => {
+      const dirty = '<svg><path d="M0 0"/onmouseover=alert(1)></svg>'
+      const clean = sanitizeGlyphSvg(dirty)
+      expect(clean).not.toMatch(/onmouseover/i)
+    })
+
+    it('strips <img> with data: src + onload handler', () => {
+      const dirty =
+        '<svg></svg><img/onload=alert(1) src=data:image/gif;base64,R0lGODlhAQABAAAAACw=>'
+      const clean = sanitizeGlyphSvg(dirty)
+      expect(clean).not.toMatch(/onload/i)
+      expect(clean).not.toMatch(/<img\b/i)
+    })
+
+    it('strips event handlers preceded by tab or newline (not just space)', () => {
+      const dirty = '<svg\tonload="x()"\nonclick="y()"><path d="M0 0"/></svg>'
+      const clean = sanitizeGlyphSvg(dirty)
+      expect(clean).not.toMatch(/onload/i)
+      expect(clean).not.toMatch(/onclick/i)
+    })
+
+    it('strips standalone HTML elements that can fire events', () => {
+      const dirty = '<svg></svg><body onload=alert(1)>'
+      const clean = sanitizeGlyphSvg(dirty)
+      expect(clean).not.toMatch(/<body\b/i)
+      expect(clean).not.toMatch(/onload/i)
+    })
+
+    it('strips <video> / <audio> auto-event vectors', () => {
+      expect(sanitizeGlyphSvg('<svg></svg><video src=x onerror=alert(1)>')).not.toMatch(
+        /<video\b/i
+      )
+      expect(sanitizeGlyphSvg('<svg></svg><audio src=x onerror=alert(1)>')).not.toMatch(
+        /<audio\b/i
+      )
+    })
+  })
 })
 
 describe('sanitizeWritingSystem', () => {
