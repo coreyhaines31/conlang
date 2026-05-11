@@ -1,20 +1,33 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// Strict CSP for app routes. We don't use 'unsafe-inline' for scripts; the
+// only scripts loaded are first-party, the Fathom analytics tag, and the
+// Sentry tunnel. 'unsafe-inline' for style is regrettable but required by
+// Next.js + Tailwind v4 + Radix UI today.
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://cdn.usefathom.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://cdn.usefathom.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://cdn.usefathom.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "upgrade-insecure-requests",
+].join('; ')
+
 const nextConfig: NextConfig = {
   // Enable React Strict Mode for better development experience
   reactStrictMode: true,
 
   // Image optimization settings
   images: {
-    // Allow images from Supabase storage
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-    ],
+    // Project no longer uses Supabase storage. Keep the remotePatterns list
+    // empty so the Image Optimizer cannot be used as an open SSRF proxy.
+    remotePatterns: [],
   },
 
   // Headers for security
@@ -29,7 +42,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            value: 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
@@ -37,7 +50,23 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: contentSecurityPolicy,
           },
         ],
       },

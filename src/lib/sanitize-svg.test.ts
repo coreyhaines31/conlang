@@ -1,0 +1,143 @@
+import { describe, it, expect } from 'vitest'
+import {
+  sanitizeGlyphSvg,
+  sanitizeWritingSystem,
+  sanitizeLanguageDefinition,
+} from './sanitize-svg'
+
+describe('sanitizeGlyphSvg', () => {
+  it('preserves legitimate glyph markup', () => {
+    const safe =
+      '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M10 10 L 90 90" stroke="currentColor" stroke-width="3" fill="none"/>' +
+      '<circle cx="50" cy="50" r="40" fill="currentColor"/>' +
+      '</svg>'
+    expect(sanitizeGlyphSvg(safe)).toBe(safe)
+  })
+
+  it('strips <script> tags and their bodies', () => {
+    const dirty = '<svg><script>alert(1)</script><path d="M0 0"/></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/script/i)
+    expect(clean).toContain('<path d="M0 0"/>')
+  })
+
+  it('strips inline event handlers from any element', () => {
+    const dirty = '<svg onload="alert(1)"><path d="M0 0" onclick="alert(2)"/></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/onload/i)
+    expect(clean).not.toMatch(/onclick/i)
+  })
+
+  it('strips <foreignObject>', () => {
+    const dirty =
+      '<svg><foreignObject><iframe src="https://evil.example"></iframe></foreignObject></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/foreignObject/i)
+    expect(clean).not.toMatch(/iframe/i)
+  })
+
+  it('neutralizes javascript: URLs in href attributes', () => {
+    const dirty = '<svg><a href="javascript:alert(1)"><path d="M0 0"/></a></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/javascript:/i)
+    expect(clean).not.toMatch(/<a\b/i)
+  })
+
+  it('neutralizes xlink:href javascript: URLs', () => {
+    const dirty = '<svg><use xlink:href="javascript:alert(1)"/></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/javascript:/i)
+    expect(clean).not.toMatch(/<use/i)
+  })
+
+  it('strips DOCTYPE and XML processing instructions', () => {
+    const dirty = '<?xml version="1.0"?><!DOCTYPE svg><svg><path d="M0 0"/></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean.startsWith('<svg')).toBe(true)
+    expect(clean).not.toMatch(/DOCTYPE/i)
+    expect(clean).not.toMatch(/\?xml/i)
+  })
+
+  it('strips style attributes', () => {
+    const dirty = '<svg><path style="background:url(x)" d="M0 0"/></svg>'
+    expect(sanitizeGlyphSvg(dirty)).not.toMatch(/style\s*=/i)
+  })
+
+  it('strips <animate>, <set> and other SVG-only script vectors', () => {
+    const dirty =
+      '<svg><animate attributeName="href" to="javascript:alert(1)"/></svg>'
+    const clean = sanitizeGlyphSvg(dirty)
+    expect(clean).not.toMatch(/animate/i)
+    expect(clean).not.toMatch(/javascript:/i)
+  })
+
+  it('strips <image> tag (can fetch arbitrary URLs)', () => {
+    const dirty = '<svg><image href="https://attacker.example/x"/></svg>'
+    expect(sanitizeGlyphSvg(dirty)).not.toMatch(/<image/i)
+  })
+
+  it('returns empty string for non-string input', () => {
+    expect(sanitizeGlyphSvg(null)).toBe('')
+    expect(sanitizeGlyphSvg(undefined)).toBe('')
+    expect(sanitizeGlyphSvg(123)).toBe('')
+    expect(sanitizeGlyphSvg({ svg: '<svg/>' })).toBe('')
+  })
+
+  it('is idempotent', () => {
+    const dirty = '<svg onload="alert(1)"><script>x</script><path d="M0 0"/></svg>'
+    const once = sanitizeGlyphSvg(dirty)
+    const twice = sanitizeGlyphSvg(once)
+    expect(once).toBe(twice)
+  })
+})
+
+describe('sanitizeWritingSystem', () => {
+  it('sanitizes every glyph svg', () => {
+    const ws = {
+      id: 'a',
+      name: 'x',
+      glyphs: [
+        { id: '1', name: 'a', svg: '<svg onload="x()"><path d="M0 0"/></svg>' },
+        { id: '2', name: 'b', svg: '<svg><script>y()</script></svg>' },
+      ],
+    }
+    const clean = sanitizeWritingSystem(ws)
+    expect(clean.glyphs![0].svg).not.toMatch(/onload/i)
+    expect(clean.glyphs![1].svg).not.toMatch(/script/i)
+  })
+
+  it('returns the original value for nullish input', () => {
+    expect(sanitizeWritingSystem(null)).toBeNull()
+    expect(sanitizeWritingSystem(undefined)).toBeUndefined()
+  })
+
+  it('does not mutate the input', () => {
+    const ws = {
+      glyphs: [{ id: '1', name: 'a', svg: '<svg onload="x"></svg>' }],
+    }
+    const before = JSON.stringify(ws)
+    sanitizeWritingSystem(ws)
+    expect(JSON.stringify(ws)).toBe(before)
+  })
+})
+
+describe('sanitizeLanguageDefinition', () => {
+  it('sanitizes the writingSystem field on a language definition', () => {
+    const def = {
+      phonology: { consonants: ['p', 't'], vowels: ['a'] },
+      writingSystem: {
+        glyphs: [{ id: '1', name: 'a', svg: '<svg><script>1</script></svg>' }],
+      },
+    }
+    const clean = sanitizeLanguageDefinition(def) as typeof def
+    expect(clean.writingSystem.glyphs[0].svg).not.toMatch(/script/i)
+    expect(clean.phonology.consonants).toEqual(['p', 't'])
+  })
+
+  it('passes through definitions with no writingSystem', () => {
+    const def = { phonology: { consonants: [], vowels: [] } }
+    const clean = sanitizeLanguageDefinition(def)
+    expect(clean).toEqual(def)
+  })
+})

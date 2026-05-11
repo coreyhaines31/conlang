@@ -18,6 +18,16 @@ const TYPE_LABELS: Record<SupportType, string> = {
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024 // 5 MB
 
+// Conservative RFC-5321-style email pattern. Reject CRLF and other header
+// injection vectors before passing the value to Resend's replyTo.
+const EMAIL_PATTERN = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/
+
+function isValidEmail(value: string): boolean {
+  if (value.length > 254) return false
+  if (/[\r\n]/.test(value)) return false
+  return EMAIL_PATTERN.test(value)
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -38,11 +48,25 @@ export async function submitSupportRequest(
 
   const subject = (formData.get('subject') as string)?.trim()
   const body = (formData.get('body') as string)?.trim()
-  const guestEmail = (formData.get('guestEmail') as string | null)?.trim() || null
+  const guestEmailRaw = (formData.get('guestEmail') as string | null)?.trim() || null
   const imageFile = formData.get('image') as File | null
 
   if (!subject || !body) {
     return { success: false, error: 'Subject and message are required.' }
+  }
+
+  // Reject malformed guest emails server-side before they hit Resend's
+  // replyTo header. The client uses <input type="email">, but that's a
+  // hint, not a guarantee.
+  const guestEmail =
+    guestEmailRaw && isValidEmail(guestEmailRaw) ? guestEmailRaw : null
+  if (guestEmailRaw && !guestEmail) {
+    return { success: false, error: 'Please enter a valid email address.' }
+  }
+
+  // Length caps as defense against giant email payloads.
+  if (subject.length > 200 || body.length > 5000) {
+    return { success: false, error: 'Subject or message is too long.' }
   }
 
   // For logged-in users, read email from server session (never trust client).

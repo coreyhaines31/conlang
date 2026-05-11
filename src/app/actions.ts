@@ -17,6 +17,7 @@ import {
   type CommunityPhrasePack,
 } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
+import { sanitizeLanguageDefinition } from '@/lib/sanitize-svg'
 
 async function requireUser() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -35,10 +36,11 @@ export async function saveLanguage(
   isPublic: boolean
 ): Promise<Language> {
   const user = await requireUser()
+  const safeDefinition = sanitizeLanguageDefinition(definition)
 
   const [row] = await db
     .insert(languages)
-    .values({ userId: user.id, name, slug, definition, seed, generatorVersion, isPublic })
+    .values({ userId: user.id, name, slug, definition: safeDefinition, seed, generatorVersion, isPublic })
     .returning()
 
   revalidatePath('/')
@@ -54,10 +56,11 @@ export async function updateLanguage(
   isPublic: boolean
 ): Promise<Language> {
   const user = await requireUser()
+  const safeDefinition = sanitizeLanguageDefinition(definition)
 
   const [row] = await db
     .update(languages)
-    .set({ name, definition, seed, generatorVersion, isPublic, updatedAt: new Date() })
+    .set({ name, definition: safeDefinition, seed, generatorVersion, isPublic, updatedAt: new Date() })
     .where(and(eq(languages.id, id), eq(languages.userId, user.id)))
     .returning()
 
@@ -106,10 +109,12 @@ export async function createSlug(name: string): Promise<string> {
 export async function duplicateLanguage(languageId: string): Promise<Language> {
   const user = await requireUser()
 
+  // Only allow duplicating a language the caller owns; use copyPublicLanguage
+  // for the share/copy flow on publicly shared languages.
   const [original] = await db
     .select()
     .from(languages)
-    .where(eq(languages.id, languageId))
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
     .limit(1)
 
   if (!original) throw new Error('Language not found')
@@ -123,7 +128,7 @@ export async function duplicateLanguage(languageId: string): Promise<Language> {
       userId: user.id,
       name: newName,
       slug: newSlug,
-      definition: original.definition,
+      definition: sanitizeLanguageDefinition(original.definition),
       seed: original.seed,
       generatorVersion: original.generatorVersion,
       isPublic: false,
@@ -173,7 +178,8 @@ export async function copyPublicLanguage(languageId: string): Promise<Language> 
       userId: user.id,
       name: newName,
       slug: newSlug,
-      definition: original.definition,
+      // Sanitize even on copy in case the source predates the sanitizer.
+      definition: sanitizeLanguageDefinition(original.definition),
       seed: original.seed,
       generatorVersion: original.generatorVersion,
       isPublic: false,
@@ -302,6 +308,19 @@ export async function deleteLexiconEntry(id: string): Promise<boolean> {
 }
 
 export async function getLexiconEntries(languageId: string): Promise<LexiconEntry[]> {
+  // Only return entries when the caller owns the language or it is public.
+  const session = await auth.api.getSession({ headers: await headers() })
+  const userId = session?.user?.id ?? null
+
+  const [lang] = await db
+    .select({ id: languages.id, userId: languages.userId, isPublic: languages.isPublic })
+    .from(languages)
+    .where(eq(languages.id, languageId))
+    .limit(1)
+
+  if (!lang) return []
+  if (!lang.isPublic && lang.userId !== userId) return []
+
   return db
     .select()
     .from(lexiconEntries)
@@ -347,6 +366,17 @@ export async function createSnapshot(
 }
 
 export async function getSnapshots(languageId: string): Promise<Snapshot[]> {
+  // Snapshots are private history; require ownership of the parent language.
+  const user = await requireUser()
+
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
+    .limit(1)
+
+  if (!lang) return []
+
   return db
     .select()
     .from(snapshots)
@@ -383,9 +413,20 @@ export async function deleteSnapshot(id: string): Promise<boolean> {
 export async function restoreSnapshot(snapshotId: string): Promise<Language> {
   const user = await requireUser()
 
+  // Verify ownership via join before reading the snapshot's payload, so
+  // an attacker cannot use a guessed snapshot ID to copy another user's
+  // private content into their own language.
   const [snapshot] = await db
-    .select()
+    .select({
+      id: snapshots.id,
+      languageId: snapshots.languageId,
+      definition: snapshots.definition,
+    })
     .from(snapshots)
+    .innerJoin(
+      languages,
+      and(eq(languages.id, snapshots.languageId), eq(languages.userId, user.id))
+    )
     .where(eq(snapshots.id, snapshotId))
     .limit(1)
 

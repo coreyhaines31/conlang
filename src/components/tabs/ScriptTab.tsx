@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { GlyphCanvas } from '@/components/GlyphCanvas'
+import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
 
 interface ScriptTabProps {
   definition: LanguageDefinition
@@ -345,7 +346,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
                   >
                     <div
                       className="w-12 h-12 mx-auto"
-                      dangerouslySetInnerHTML={{ __html: glyph.svg }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeGlyphSvg(glyph.svg) }}
                     />
                     <div className="text-center text-xs mt-1 font-mono">
                       {glyph.name}
@@ -449,7 +450,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
                       width: writingSystem.defaultGlyphSize,
                       height: writingSystem.defaultGlyphSize,
                     }}
-                    dangerouslySetInnerHTML={{ __html: glyph.svg }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeGlyphSvg(glyph.svg) }}
                     title={item.char}
                   />
                 )
@@ -491,7 +492,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
               <Label className="text-sm mb-2 block">Preview:</Label>
               <div
                 className="w-16 h-16 border rounded bg-background"
-                dangerouslySetInnerHTML={{ __html: newGlyphSvg }}
+                dangerouslySetInnerHTML={{ __html: sanitizeGlyphSvg(newGlyphSvg) }}
               />
             </div>
           )}

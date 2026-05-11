@@ -1,11 +1,17 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 
 export default function SentryExamplePage() {
+  // Test harness — never expose in production where anyone could waste
+  // Sentry quota by triggering errors.
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
   const [dsnStatus, setDsnStatus] = useState<string>("checking...");
   
   useEffect(() => {
