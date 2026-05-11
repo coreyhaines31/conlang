@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { languages, lexiconEntries } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
+import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -110,13 +111,22 @@ export default async function PublicLanguagePage({ params }: PageProps) {
           </Card>
         )}
 
-        {(language.definition as any)?.writingSystem?.glyphs?.length > 0 && (
+        {(language.definition as any)?.writingSystem?.glyphs?.length > 0 && (() => {
+          const rawWritingSystem = (language.definition as any).writingSystem as WritingSystem
+          const safeWritingSystem: WritingSystem = {
+            ...rawWritingSystem,
+            glyphs: (rawWritingSystem.glyphs || []).map((g) => ({
+              ...g,
+              svg: sanitizeGlyphSvg(g.svg),
+            })),
+          }
+          return (
           <Card>
             <CardHeader>
               <CardTitle>Writing System</CardTitle>
               <CardDescription>
-                {(language.definition as any).writingSystem.name} -{' '}
-                {(language.definition as any).writingSystem.glyphs.length} glyphs
+                {safeWritingSystem.name} -{' '}
+                {safeWritingSystem.glyphs.length} glyphs
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -126,7 +136,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
                   <div className="border rounded-lg p-4 bg-secondary/20">
                     <ScriptPreview
                       text={((language.definition as any).sampleWords as string[]).slice(0, 5).join(' ')}
-                      writingSystem={(language.definition as any).writingSystem as WritingSystem}
+                      writingSystem={safeWritingSystem}
                     />
                   </div>
                 </div>
@@ -134,9 +144,12 @@ export default async function PublicLanguagePage({ params }: PageProps) {
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Glyph Inventory</h4>
                 <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-                  {((language.definition as any).writingSystem.glyphs as any[]).map((glyph: any) => (
+                  {safeWritingSystem.glyphs.map((glyph) => (
                     <div key={glyph.id} className="p-2 border rounded text-center" title={glyph.name}>
-                      <div className="w-8 h-8 mx-auto" dangerouslySetInnerHTML={{ __html: glyph.svg }} />
+                      <div
+                        className="w-8 h-8 mx-auto"
+                        dangerouslySetInnerHTML={{ __html: glyph.svg }}
+                      />
                       <div className="text-xs text-muted-foreground mt-1 font-mono">{glyph.name}</div>
                     </div>
                   ))}
@@ -144,7 +157,8 @@ export default async function PublicLanguagePage({ params }: PageProps) {
               </div>
             </CardContent>
           </Card>
-        )}
+          )
+        })()}
 
         {entries.length > 0 && (
           <Card>
