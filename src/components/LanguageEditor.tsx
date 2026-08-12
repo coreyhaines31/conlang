@@ -165,6 +165,21 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
   }
 
+  const handleDeleteDraft = (draft: Partial<Language>) => {
+    if (!confirm(`Delete draft "${draft.name}"?`)) return
+    const newDrafts = localDrafts.filter(d => d.seed !== draft.seed)
+    setLocalDrafts(newDrafts)
+    localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
+    // If the deleted draft is open, switch away so autosave doesn't re-add it
+    if (!currentLanguage?.id && currentLanguage?.seed === draft.seed) {
+      if (newDrafts.length > 0) {
+        setCurrentLanguage(newDrafts[0])
+      } else {
+        setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+      }
+    }
+  }
+
   const handleSaveToLocal = () => {
     if (!currentLanguage?.name) return
     // Save current language to local drafts
@@ -483,6 +498,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
+            onDeleteDraft={handleDeleteDraft}
           />
         </div>
         {/* Mobile: Language selector at top */}
@@ -496,6 +512,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
+            onDeleteDraft={handleDeleteDraft}
             onMobileClose={() => setMobileMenuOpen(false)}
           />
         </div>

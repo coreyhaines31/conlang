@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown, Plus, Globe, Lock, FileText } from 'lucide-react'
+import { ChevronDown, Plus, Globe, Lock, FileText, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const MAX_LANGUAGES = 10
@@ -20,6 +20,7 @@ interface LanguageSelectorProps {
   localDrafts: Partial<Language>[]
   onSelectLanguage: (lang: Partial<Language>) => void
   onNewLanguage: () => void
+  onDeleteDraft?: (draft: Partial<Language>) => void
   onMobileClose?: () => void
 }
 
@@ -29,6 +30,7 @@ export function LanguageSelector({
   localDrafts,
   onSelectLanguage,
   onNewLanguage,
+  onDeleteDraft,
   onMobileClose,
 }: LanguageSelectorProps) {
   const totalLanguages = savedLanguages.length + localDrafts.length
@@ -117,9 +119,25 @@ export function LanguageSelector({
                     !currentLanguage?.id && currentLanguage?.name === draft.name && 'bg-accent'
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full gap-2">
                     <span className="truncate">{draft.name}</span>
-                    <span className="text-xs text-muted-foreground">Draft</span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs text-muted-foreground">Draft</span>
+                      {onDeleteDraft && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            onDeleteDraft(draft)
+                          }}
+                          className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          aria-label={`Delete draft ${draft.name}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </span>
                   </div>
                 </DropdownMenuItem>
               ))}
