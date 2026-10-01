@@ -1,0 +1,48 @@
+name: e2e
+on:
+  pull_request:
+  push:
+    branches: [development, main]
+permissions:
+  contents: read
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      # The app needs these to boot; signed-out flows never reach the DB or email.
+      - name: Write placeholder .env.local
+        run: |
+          cat > .env.local <<'EOF'
+          DATABASE_URL=postgresql://e2e:e2e@127.0.0.1:5432/e2e
+          BETTER_AUTH_SECRET=e2e-placeholder-secret-not-used-for-real-auth
+          BETTER_AUTH_URL=http://localhost:3001
+          RESEND_API_KEY=re_e2e_placeholder
+          EOF
+      - run: npx e2e run --reporter list,junit
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          E2E_TELEMETRY_DISABLED: 1
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-report
+          path: |
+            .e2e/report.json
+            .e2e/junit.xml
+            .e2e/logs/app.log
+          if-no-files-found: warn
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-artifacts
+          path: .e2e/artifacts
+          if-no-files-found: warn
+          retention-days: 7
