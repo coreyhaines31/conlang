@@ -88,6 +88,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [draftToDelete, setDraftToDelete] = useState<Partial<Language> | null>(null)
   // Load drafts from localStorage on mount
   useEffect(() => {
     // Load all local drafts
@@ -179,7 +180,6 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   }
 
   const handleDeleteDraft = (draft: Partial<Language>) => {
-    if (!confirm(`Delete draft "${draft.name}"?`)) return
     const newDrafts = localDrafts.filter(d => d.seed !== draft.seed)
     setLocalDrafts(newDrafts)
     localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
@@ -191,6 +191,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
       }
     }
+    toast.success('Draft deleted')
   }
 
   const handleSaveToLocal = () => {
@@ -511,7 +512,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
-            onDeleteDraft={handleDeleteDraft}
+            onDeleteDraft={setDraftToDelete}
           />
         </div>
         {/* Mobile: Language selector at top */}
@@ -525,7 +526,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
-            onDeleteDraft={handleDeleteDraft}
+            onDeleteDraft={setDraftToDelete}
             onMobileClose={() => setMobileMenuOpen(false)}
           />
         </div>
@@ -932,6 +933,26 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         onClose={() => setShowAuthModal(false)}
         onSuccess={handleAuthSuccess}
       />
+
+      <AlertDialog open={!!draftToDelete} onOpenChange={(open) => !open && setDraftToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete draft &ldquo;{draftToDelete?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the draft from this browser. This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => draftToDelete && handleDeleteDraft(draftToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
