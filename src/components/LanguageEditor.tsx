@@ -15,6 +15,19 @@ import {
   getLexiconEntries,
 } from '@/app/actions'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -269,15 +282,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
   const handleDelete = async () => {
     if (!currentLanguage?.id || !user) return
-    if (!confirm('Are you sure you want to delete this language?')) return
 
     try {
       await deleteLanguage(currentLanguage.id)
       setLanguages(prev => prev.filter(l => l.id !== currentLanguage.id))
       setCurrentLanguage(null)
+      toast.success('Language deleted')
     } catch (error) {
       console.error('Delete failed:', error)
-      alert('Failed to delete language')
+      toast.error('Failed to delete language')
     }
   }
 
@@ -574,41 +587,80 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           </div>
 
           {user && currentLanguage?.id && (
-            <div className="flex gap-1">
-              <Button
-                onClick={handleTogglePublic}
-                className="flex-1"
-                variant="outline"
-                size="sm"
-                aria-label={currentLanguage.isPublic ? 'Make private' : 'Make public'}
-              >
-                {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              </Button>
-              <ShareDialog
-                languageSlug={currentLanguage.slug || null}
-                languageName={currentLanguage.name || 'My Language'}
-                isPublic={currentLanguage.isPublic || false}
-                onTogglePublic={handleTogglePublic}
-              />
-              <Button
-                onClick={handleDuplicate}
-                disabled={saving}
-                variant="outline"
-                size="sm"
-                aria-label="Duplicate language"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleDelete}
-                variant="outline"
-                size="sm"
-                className="text-destructive"
-                aria-label="Delete language"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            <TooltipProvider delayDuration={300}>
+              <div className="flex gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleTogglePublic}
+                      className="flex-1"
+                      variant="outline"
+                      size="sm"
+                      aria-label={currentLanguage.isPublic ? 'Make private' : 'Make public'}
+                    >
+                      {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{currentLanguage.isPublic ? 'Make private' : 'Make public'}</TooltipContent>
+                </Tooltip>
+                <ShareDialog
+                  languageSlug={currentLanguage.slug || null}
+                  languageName={currentLanguage.name || 'My Language'}
+                  isPublic={currentLanguage.isPublic || false}
+                  onTogglePublic={handleTogglePublic}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleDuplicate}
+                      disabled={saving}
+                      variant="outline"
+                      size="sm"
+                      aria-label="Duplicate language"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Duplicate language</TooltipContent>
+                </Tooltip>
+                <AlertDialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive"
+                          aria-label="Delete language"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete language</TooltipContent>
+                  </Tooltip>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete &ldquo;{currentLanguage.name || 'this language'}&rdquo;?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently deletes the language and its lexicon. This can&apos;t be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </TooltipProvider>
           )}
 
           <SupportWidget isLoggedIn={!!user} />
