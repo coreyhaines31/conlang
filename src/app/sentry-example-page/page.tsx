@@ -4,7 +4,6 @@ import * as Sentry from "@sentry/nextjs";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
 
 export default function SentryExamplePage() {
   // Test harness — never expose in production where anyone could waste
@@ -12,16 +11,10 @@ export default function SentryExamplePage() {
   if (process.env.NODE_ENV === "production") {
     notFound();
   }
-  const [dsnStatus, setDsnStatus] = useState<string>("checking...");
-  
-  useEffect(() => {
-    const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
-    if (dsn) {
-      setDsnStatus(`✅ Configured: ${dsn.substring(0, 30)}...`);
-    } else {
-      setDsnStatus("❌ NOT CONFIGURED - Add NEXT_PUBLIC_SENTRY_DSN to your environment");
-    }
-  }, []);
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  const dsnStatus = dsn
+    ? `✅ Configured: ${dsn.substring(0, 30)}...`
+    : "❌ NOT CONFIGURED - Add NEXT_PUBLIC_SENTRY_DSN to your environment";
 
   const triggerError = () => {
     // Use a button that navigates to a page that throws
