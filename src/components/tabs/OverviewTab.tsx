@@ -205,7 +205,7 @@ export function OverviewTab({ language, onUpdate, onAddToLexicon, onNavigate }: 
         <Card>
           <CardHeader>
             <CardTitle>Generate Words</CardTitle>
-            <CardDescription>Create words using your language's sound system</CardDescription>
+            <CardDescription>Create words using your language&apos;s sound system</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">

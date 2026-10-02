@@ -137,7 +137,7 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Lexicon</CardTitle>
-            <CardDescription>Manage your language's vocabulary</CardDescription>
+            <CardDescription>Manage your language&apos;s vocabulary</CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

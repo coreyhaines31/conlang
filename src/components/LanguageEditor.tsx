@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Language, LexiconEntry } from '@/lib/db/schema'
 import { AuthModal } from './auth/AuthModal'
 import { authClient } from '@/lib/auth-client'
@@ -473,10 +474,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card border-b px-4 py-3 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
           <span className="font-semibold text-lg">Conlang</span>
-        </a>
+        </Link>
         <Button
           variant="ghost"
           size="icon"
@@ -507,10 +508,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       )}>
         {/* Logo & Header - Hidden on mobile since we have the mobile header */}
         <div className="p-4 border-b hidden md:block">
-          <a href="/" className="flex items-center gap-2 mb-3">
+          <Link href="/" className="flex items-center gap-2 mb-3">
             <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" width={24} height={24} />
             <span className="font-semibold text-lg">Conlang</span>
-          </a>
+          </Link>
           <LanguageSelector
             currentLanguage={currentLanguage}
             savedLanguages={languages}
