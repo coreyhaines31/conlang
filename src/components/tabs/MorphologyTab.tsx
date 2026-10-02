@@ -166,7 +166,7 @@ export function MorphologyTab({ definition, onUpdate }: MorphologyTabProps) {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={syntax.pluralMarking}
-                onChange={(e) => updateSyntax({ pluralMarking: e.target.value as any })}
+                onChange={(e) => updateSyntax({ pluralMarking: e.target.value as SyntaxConfig['pluralMarking'] })}
               >
                 <option value="suffix">Suffix (-s, -en)</option>
                 <option value="prefix">Prefix</option>
@@ -180,7 +180,7 @@ export function MorphologyTab({ definition, onUpdate }: MorphologyTabProps) {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={syntax.tenseMarking}
-                onChange={(e) => updateSyntax({ tenseMarking: e.target.value as any })}
+                onChange={(e) => updateSyntax({ tenseMarking: e.target.value as SyntaxConfig['tenseMarking'] })}
               >
                 <option value="suffix">Suffix (-ed)</option>
                 <option value="prefix">Prefix</option>
@@ -194,7 +194,7 @@ export function MorphologyTab({ definition, onUpdate }: MorphologyTabProps) {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={syntax.questionFormation}
-                onChange={(e) => updateSyntax({ questionFormation: e.target.value as any })}
+                onChange={(e) => updateSyntax({ questionFormation: e.target.value as SyntaxConfig['questionFormation'] })}
               >
                 <option value="particle">Question particle</option>
                 <option value="inversion">Word order change</option>

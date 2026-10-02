@@ -77,7 +77,7 @@ export function PhonologyTab({ definition, onUpdate }: PhonologyTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>Quick Presets</CardTitle>
-          <CardDescription>Apply a preset to quickly configure your language's sound system</CardDescription>
+          <CardDescription>Apply a preset to quickly configure your language&apos;s sound system</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

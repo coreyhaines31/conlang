@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 type AuthUser = { id: string; email?: string | null }
 import { copyPublicLanguage } from '@/app/actions'
 import { AuthModal } from './auth/AuthModal'
+import { toast } from 'sonner'
 
 interface CopyLanguageButtonProps {
   languageId: string
@@ -32,15 +33,9 @@ export function CopyLanguageButton({ languageId, user }: CopyLanguageButtonProps
       }
     } catch (error) {
       console.error('Copy failed:', error)
-      alert('Failed to copy language')
+      toast.error('Failed to copy language')
     }
     setCopying(false)
-  }
-
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false)
-    // Reload to get user session, then they can click copy again
-    window.location.reload()
   }
 
   return (
@@ -51,7 +46,6 @@ export function CopyLanguageButton({ languageId, user }: CopyLanguageButtonProps
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
       />
     </>
   )

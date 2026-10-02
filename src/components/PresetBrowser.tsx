@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 interface PresetBrowserProps {
   definition: LanguageDefinition
@@ -31,6 +33,7 @@ export function PresetBrowser({
   onApplyPreset,
   isAuthenticated 
 }: PresetBrowserProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [presets, setPresets] = useState<Preset[]>([])
   const [myPresets, setMyPresets] = useState<Preset[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -41,13 +44,6 @@ export function PresetBrowser({
   const [publishName, setPublishName] = useState('')
   const [publishDescription, setPublishDescription] = useState('')
   const [publishTags, setPublishTags] = useState('')
-
-  useEffect(() => {
-    loadPresets()
-    if (isAuthenticated) {
-      loadMyPresets()
-    }
-  }, [isAuthenticated])
 
   const loadPresets = async () => {
     setIsLoading(true)
@@ -70,15 +66,23 @@ export function PresetBrowser({
     }
   }
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; the loader sets its own loading flag
+    loadPresets()
+    if (isAuthenticated) {
+      loadMyPresets()
+    }
+  }, [isAuthenticated])
+
   const handlePublish = async () => {
     if (!publishName.trim()) {
-      alert('Please enter a name for your preset')
+      toast.error('Please enter a name for your preset')
       return
     }
 
     const content = getPresetContent(publishType)
     if (!content) {
-      alert('Nothing to publish. Make sure your language has content for this preset type.')
+      toast.error('Nothing to publish. Make sure your language has content for this preset type.')
       return
     }
 
@@ -98,13 +102,11 @@ export function PresetBrowser({
       await loadMyPresets()
     } catch (error) {
       console.error('Failed to publish preset:', error)
-      alert('Failed to publish preset. Please try again.')
+      toast.error('Failed to publish preset. Please try again.')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this preset? This cannot be undone.')) return
-    
     try {
       await deletePreset(id)
       setMyPresets(prev => prev.filter(p => p.id !== id))
@@ -113,7 +115,7 @@ export function PresetBrowser({
     }
   }
 
-  const getPresetContent = (type: PresetType): any => {
+  const getPresetContent = (type: PresetType): unknown => {
     switch (type) {
       case 'phonology':
         return definition.phonology
@@ -399,7 +401,7 @@ export function PresetBrowser({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(preset.id)}
+                        onClick={() => setPendingDeleteId(preset.id)}
                         className="text-destructive hover:text-destructive"
                       >
                         Delete
@@ -412,6 +414,15 @@ export function PresetBrowser({
           </Card>
         </>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        title="Delete this preset?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   )
 }

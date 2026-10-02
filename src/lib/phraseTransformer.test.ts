@@ -267,7 +267,7 @@ describe('transformSimplePhrase', () => {
     phonotactics: { syllableTemplates: [{ template: 'CV', weight: 1 }], forbiddenSequences: [] },
     // The implementation passes definition.orthography to applyOrthography
     // which expects { k: 'c' } format, not { mappings: { k: 'c' } }
-    orthography: { k: 'c' } as any, // Using the format expected by local applyOrthography
+    orthography: { k: 'c' } as unknown as LanguageDefinition['orthography'], // Using the format expected by local applyOrthography
   }
 
   const testLexicon: LexiconEntry[] = [

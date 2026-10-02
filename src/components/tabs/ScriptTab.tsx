@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { GlyphCanvas } from '@/components/GlyphCanvas'
 import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
+import { toast } from 'sonner'
 
 interface ScriptTabProps {
   definition: LanguageDefinition
@@ -147,10 +148,10 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
         if (imported) {
           updateWritingSystem(imported)
         } else {
-          alert('Invalid script file')
+          toast.error('Invalid script file')
         }
       } catch {
-        alert('Failed to import script')
+        toast.error('Failed to import script')
       }
     }
     input.click()
@@ -239,7 +240,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={writingSystem.direction}
-                onChange={(e) => updateWritingSystem({ direction: e.target.value as any })}
+                onChange={(e) => updateWritingSystem({ direction: e.target.value as WritingSystem['direction'] })}
               >
                 <option value="ltr">Left to Right</option>
                 <option value="rtl">Right to Left</option>

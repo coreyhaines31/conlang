@@ -83,7 +83,7 @@ export async function deleteLanguage(id: string): Promise<boolean> {
 }
 
 export async function createSlug(name: string): Promise<string> {
-  let baseSlug = name
+  const baseSlug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
