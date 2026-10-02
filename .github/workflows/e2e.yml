@@ -7,6 +7,8 @@ permissions:
   contents: read
 jobs:
   e2e:
+    # Fork PRs get no secrets, so agent steps can't reach the model.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
