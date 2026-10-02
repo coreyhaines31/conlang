@@ -72,6 +72,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'The cat sees',
+      category: 'test',
       structure: [
         { gloss: 'cat', role: 'S' },
         { gloss: 'see', role: 'V' },
@@ -90,6 +91,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'The cats',
+      category: 'test',
       structure: [
         { gloss: 'cat', role: 'S', number: 'plural' },
       ],
@@ -105,6 +107,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'saw',
+      category: 'test',
       structure: [
         { gloss: 'see', role: 'V', tense: 'past' },
       ],
@@ -120,6 +123,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'The dog',
+      category: 'test',
       structure: [
         { gloss: 'dog', role: 'S' },
       ],
@@ -146,6 +150,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'Cat sees dog',
+      category: 'test',
       structure: [
         { gloss: 'cat', role: 'S' },
         { gloss: 'see', role: 'V' },
@@ -176,6 +181,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'Cat sees dog',
+      category: 'test',
       structure: [
         { gloss: 'cat', role: 'S' },
         { gloss: 'see', role: 'V' },
@@ -195,6 +201,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: '',
+      category: 'test',
       structure: [],
     }
 
@@ -208,6 +215,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'big cat',
+      category: 'test',
       structure: [
         { gloss: 'big', role: 'ADJ' },
         { gloss: 'cat', role: 'S' },
@@ -236,6 +244,7 @@ describe('transformPhrase', () => {
     const phrase: GrammaticalPhrase = {
       id: 'test',
       english: 'cat big',
+      category: 'test',
       structure: [
         { gloss: 'big', role: 'ADJ' },
         { gloss: 'cat', role: 'S' },
