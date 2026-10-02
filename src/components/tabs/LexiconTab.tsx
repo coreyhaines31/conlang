@@ -30,6 +30,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { toast } from 'sonner'
 
 interface LexiconTabProps {
   languageId?: string
@@ -39,6 +41,7 @@ interface LexiconTabProps {
 }
 
 export function LexiconTab({ languageId, entries, onEntriesChange, user }: LexiconTabProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingEntry, setEditingEntry] = useState<LexiconEntry | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -92,19 +95,17 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
       setEditingEntry(null)
     } catch (error) {
       console.error('Save failed:', error)
-      alert('Failed to save entry')
+      toast.error('Failed to save entry')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this entry?')) return
-
     try {
       await deleteLexiconEntry(id)
       onEntriesChange(entries.filter(e => e.id !== id))
     } catch (error) {
       console.error('Delete failed:', error)
-      alert('Failed to delete entry')
+      toast.error('Failed to delete entry')
     }
   }
 
@@ -232,7 +233,7 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(entry.id)}
+                          onClick={() => setPendingDeleteId(entry.id)}
                           className="text-destructive"
                         >
                           Delete
@@ -246,6 +247,15 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
           </div>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        title="Delete this entry?"
+        description="This removes the word from your lexicon."
+        confirmLabel="Delete"
+        destructive
+      />
     </Card>
   )
 }

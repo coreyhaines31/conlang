@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Textarea } from '@/components/ui/textarea'
 
 interface VersionHistoryTabProps {
@@ -20,6 +21,8 @@ export function VersionHistoryTab({
   isAuthenticated,
   onRestore 
 }: VersionHistoryTabProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [pendingRestoreId, setPendingRestoreId] = useState<string | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -69,8 +72,6 @@ export function VersionHistoryTab({
   }
 
   const handleDeleteSnapshot = async (id: string) => {
-    if (!confirm('Delete this snapshot? This cannot be undone.')) return
-    
     try {
       await deleteSnapshot(id)
       setSnapshots(prev => prev.filter(s => s.id !== id))
@@ -80,8 +81,6 @@ export function VersionHistoryTab({
   }
 
   const handleRestoreSnapshot = async (id: string) => {
-    if (!confirm('Restore this snapshot? Your current work will be replaced with this version.')) return
-    
     setRestoring(id)
     try {
       await restoreSnapshot(id)
@@ -227,7 +226,7 @@ export function VersionHistoryTab({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleRestoreSnapshot(snapshot.id)}
+                      onClick={() => setPendingRestoreId(snapshot.id)}
                       disabled={restoring === snapshot.id}
                     >
                       {restoring === snapshot.id ? 'Restoring...' : 'Restore'}
@@ -235,7 +234,7 @@ export function VersionHistoryTab({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteSnapshot(snapshot.id)}
+                      onClick={() => setPendingDeleteId(snapshot.id)}
                       className="text-destructive hover:text-destructive"
                     >
                       Delete
@@ -247,6 +246,23 @@ export function VersionHistoryTab({
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => pendingDeleteId && handleDeleteSnapshot(pendingDeleteId)}
+        title="Delete this snapshot?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+      />
+      <ConfirmDialog
+        open={pendingRestoreId !== null}
+        onCancel={() => setPendingRestoreId(null)}
+        onConfirm={() => pendingRestoreId && handleRestoreSnapshot(pendingRestoreId)}
+        title="Restore this snapshot?"
+        description="Your current work will be replaced with this version."
+        confirmLabel="Restore"
+      />
     </div>
   )
 }

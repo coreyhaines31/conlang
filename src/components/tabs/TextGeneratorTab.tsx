@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { toast } from 'sonner'
 
 interface TextGeneratorTabProps {
   definition: LanguageDefinition
@@ -137,7 +138,7 @@ export function TextGeneratorTab({
     }
     
     if (inputClauses.length === 0 || inputClauses.every(c => c.words.length === 0)) {
-      alert('Please add at least one word to generate.')
+      toast.error('Please add at least one word to generate.')
       return
     }
     
