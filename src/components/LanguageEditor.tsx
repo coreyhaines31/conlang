@@ -79,25 +79,38 @@ const EMPTY_LANGUAGE: Partial<Language> = {
   },
 }
 
+// Drafts are keyed by localId, not seed, because the seed is user-editable.
+type Draft = Partial<Language> & { localId?: string }
+
+const newDraft = (): Draft => ({
+  ...EMPTY_LANGUAGE,
+  seed: Math.floor(Math.random() * 2147483647),
+  localId: crypto.randomUUID(),
+})
+
+const withLocalId = (draft: Draft): Draft =>
+  draft.localId ? draft : { ...draft, localId: crypto.randomUUID() }
+
 export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) {
   const [languages, setLanguages] = useState(initialLanguages)
-  const [currentLanguage, setCurrentLanguage] = useState<Partial<Language> | null>(null)
-  const [localDrafts, setLocalDrafts] = useState<Partial<Language>[]>([])
+  const [currentLanguage, setCurrentLanguage] = useState<Draft | null>(null)
+  const [localDrafts, setLocalDrafts] = useState<Draft[]>([])
   const [lexiconEntries, setLexiconEntries] = useState<LexiconEntry[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [draftToDelete, setDraftToDelete] = useState<Partial<Language> | null>(null)
+  const [draftToDelete, setDraftToDelete] = useState<Draft | null>(null)
   // Load drafts from localStorage on mount
   useEffect(() => {
     // Load all local drafts
     const draftsJson = localStorage.getItem('languageDrafts')
-    let drafts: Partial<Language>[] = []
+    let drafts: Draft[] = []
     if (draftsJson) {
       try {
-        drafts = JSON.parse(draftsJson)
+        drafts = (JSON.parse(draftsJson) as Draft[]).map(withLocalId)
         setLocalDrafts(drafts)
+        localStorage.setItem('languageDrafts', JSON.stringify(drafts))
       } catch (e) {
         console.error('Failed to parse drafts', e)
       }
@@ -109,7 +122,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       try {
         const parsed = JSON.parse(legacyDraft)
         if (parsed.name) {
-          drafts = [parsed]
+          drafts = [withLocalId(parsed)]
           setLocalDrafts(drafts)
           localStorage.setItem('languageDrafts', JSON.stringify(drafts))
           localStorage.removeItem('languageDraft')
@@ -132,7 +145,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
     
     // Otherwise, start with a fresh new language (no empty state)
-    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+    setCurrentLanguage(newDraft())
   }, [])
 
   // Save current language to local drafts when it changes (for unsaved languages)
@@ -140,8 +153,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (currentLanguage && !currentLanguage.id && currentLanguage.name) {
       // Update or add to local drafts
       setLocalDrafts(prev => {
-        const existingIndex = prev.findIndex(d => d.seed === currentLanguage.seed)
-        let newDrafts: Partial<Language>[]
+        const existingIndex = prev.findIndex(d => d.localId === currentLanguage.localId)
+        let newDrafts: Draft[]
         if (existingIndex >= 0) {
           newDrafts = [...prev]
           newDrafts[existingIndex] = currentLanguage
@@ -166,7 +179,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   }, [currentLanguage?.id, user])
 
   const handleNewLanguage = () => {
-    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+    setCurrentLanguage(newDraft())
     setActiveTab('overview')
   }
 
@@ -179,16 +192,16 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
   }
 
-  const handleDeleteDraft = (draft: Partial<Language>) => {
-    const newDrafts = localDrafts.filter(d => d.seed !== draft.seed)
+  const handleDeleteDraft = (draft: Draft) => {
+    const newDrafts = localDrafts.filter(d => d.localId !== draft.localId)
     setLocalDrafts(newDrafts)
     localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
     // If the deleted draft is open, switch away so autosave doesn't re-add it
-    if (!currentLanguage?.id && currentLanguage?.seed === draft.seed) {
+    if (!currentLanguage?.id && currentLanguage?.localId === draft.localId) {
       if (newDrafts.length > 0) {
         setCurrentLanguage(newDrafts[0])
       } else {
-        setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+        setCurrentLanguage(newDraft())
       }
     }
     toast.success('Draft deleted')
@@ -197,8 +210,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleSaveToLocal = () => {
     if (!currentLanguage?.name) return
     // Save current language to local drafts
-    const existingIndex = localDrafts.findIndex(d => d.seed === currentLanguage.seed)
-    let newDrafts: Partial<Language>[]
+    const existingIndex = localDrafts.findIndex(d => d.localId === currentLanguage.localId)
+    let newDrafts: Draft[]
     if (existingIndex >= 0) {
       newDrafts = [...localDrafts]
       newDrafts[existingIndex] = currentLanguage
@@ -363,7 +376,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
         if (user) {
           // Import as new language
-          const imported: Partial<Language> = {
+          const imported: Draft = {
+            localId: crypto.randomUUID(),
             name: `${data.name} (Imported)`,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
@@ -373,7 +387,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           setActiveTab('overview')
         } else {
           // Import as local draft
-          const imported: Partial<Language> = {
+          const imported: Draft = {
+            localId: crypto.randomUUID(),
             name: data.name,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
