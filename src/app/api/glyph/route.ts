@@ -12,7 +12,7 @@ const RATE_LIMIT_CONFIG = {
 export async function POST(request: NextRequest) {
   try {
     // Check rate limit first
-    const clientIP = getClientIP(request)
+    const clientIP = getClientIP(request.headers)
     const rateLimitResult = rateLimit(`glyph:${clientIP}`, RATE_LIMIT_CONFIG)
     
     if (!rateLimitResult.success) {

@@ -3,8 +3,8 @@
 import { Resend } from 'resend'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
-const SUPPORT_EMAIL = 'haines.corey@gmail.com'
 const FROM_EMAIL = 'Conlang Support <noreply@mail.conlang.app>'
 
 const VALID_TYPES = ['question', 'bug', 'feature'] as const
@@ -69,13 +69,22 @@ export async function submitSupportRequest(
     return { success: false, error: 'Subject or message is too long.' }
   }
 
-  // For logged-in users, read email from server session (never trust client).
-  // For guests, use the email they submitted in the form.
-  const session = await auth.api.getSession({ headers: await headers() })
-  const userEmail = session?.user?.email ?? guestEmail
+  const requestHeaders = await headers()
+  const limited = rateLimit(`support:${getClientIP(requestHeaders)}`, { limit: 5, windowMs: 60 * 60 * 1000 })
+  if (!limited.success) {
+    return { success: false, error: 'Too many requests. Please try again later.' }
+  }
+
+  // Only a signed-in user's session email is verified. A guest email is used
+  // for reply-to on the support message, never as a recipient, so the form
+  // can't be used to send mail to arbitrary addresses.
+  const session = await auth.api.getSession({ headers: requestHeaders })
+  const verifiedEmail = session?.user?.email ?? null
+  const userEmail = verifiedEmail ?? guestEmail
 
   const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
+  const supportEmail = process.env.SUPPORT_EMAIL
+  if (!apiKey || !supportEmail) {
     return { success: false, error: 'Email service not configured.' }
   }
 
@@ -106,7 +115,7 @@ export async function submitSupportRequest(
     <div style="font-family: sans-serif; max-width: 600px;">
       <h2 style="margin-bottom: 4px;">${typeLabel}: ${safeSubject}</h2>
       <p style="color: #666; margin-top: 0;">
-        From: <strong>${safeEmail ?? 'Anonymous (not logged in)'}</strong>
+        From: <strong>${safeEmail ?? 'Anonymous (not logged in)'}</strong>${verifiedEmail ? '' : safeEmail ? ' (unverified)' : ''}
       </p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 16px 0;" />
       <p style="line-height: 1.6;">${safeBody}</p>
@@ -115,8 +124,8 @@ export async function submitSupportRequest(
 
   const { error: supportSendError } = await resend.emails.send({
     from: FROM_EMAIL,
-    to: SUPPORT_EMAIL,
-    replyTo: userEmail ?? SUPPORT_EMAIL,
+    to: supportEmail,
+    replyTo: userEmail ?? supportEmail,
     subject: `[Conlang Support] ${typeLabel}: ${subject}`,
     html: supportHtml,
     attachments: attachments.length > 0 ? attachments : undefined,
@@ -127,7 +136,7 @@ export async function submitSupportRequest(
   }
 
   // Confirmation email to user — reply-to set to support so they can continue the thread
-  if (userEmail) {
+  if (verifiedEmail) {
     const confirmHtml = `
       <div style="font-family: sans-serif; max-width: 600px;">
         <h2>We received your message</h2>
@@ -147,8 +156,8 @@ export async function submitSupportRequest(
     // Non-fatal: log error but don't fail the whole request
     const { error: confirmSendError } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: userEmail,
-      replyTo: SUPPORT_EMAIL,
+      to: verifiedEmail,
+      replyTo: supportEmail,
       subject: `Re: [Conlang Support] ${subject}`,
       html: confirmHtml,
     })
