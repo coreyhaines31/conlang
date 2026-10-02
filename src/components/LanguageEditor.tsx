@@ -276,13 +276,6 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     setSaving(false)
   }
 
-  const handleAuthSuccess = async () => {
-    setShowAuthModal(false)
-    // After auth, try to save again
-    await handleSaveToAccount()
-    window.location.reload() // Reload to get user session
-  }
-
   const handleLogout = async () => {
     await authClient.signOut()
     window.location.reload()
@@ -946,7 +939,6 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
       />
 
       <AlertDialog open={!!draftToDelete} onOpenChange={(open) => !open && setDraftToDelete(null)}>
