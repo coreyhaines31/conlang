@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ export function PresetBrowser({
   onApplyPreset,
   isAuthenticated 
 }: PresetBrowserProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [presets, setPresets] = useState<Preset[]>([])
   const [myPresets, setMyPresets] = useState<Preset[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -103,8 +105,6 @@ export function PresetBrowser({
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this preset? This cannot be undone.')) return
-    
     try {
       await deletePreset(id)
       setMyPresets(prev => prev.filter(p => p.id !== id))
@@ -399,7 +399,7 @@ export function PresetBrowser({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(preset.id)}
+                        onClick={() => setPendingDeleteId(preset.id)}
                         className="text-destructive hover:text-destructive"
                       >
                         Delete
@@ -412,6 +412,15 @@ export function PresetBrowser({
           </Card>
         </>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        title="Delete this preset?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   )
 }

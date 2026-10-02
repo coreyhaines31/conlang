@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 interface CommunityPhrasesTabProps {
   isAuthenticated: boolean
@@ -32,6 +33,7 @@ export function CommunityPhrasesTab({
   isAuthenticated,
   onSelectPack 
 }: CommunityPhrasesTabProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [communityPacks, setCommunityPacks] = useState<CommunityPhrasePack[]>([])
   const [myPacks, setMyPacks] = useState<CommunityPhrasePack[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -130,8 +132,6 @@ export function CommunityPhrasesTab({
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this phrase pack? This cannot be undone.')) return
-    
     try {
       await deleteCommunityPhrasePack(id)
       setMyPacks(prev => prev.filter(p => p.id !== id))
@@ -400,7 +400,7 @@ The king is wise`}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(pack.id)}
+                        onClick={() => setPendingDeleteId(pack.id)}
                         className="text-destructive hover:text-destructive"
                       >
                         Delete
@@ -413,6 +413,15 @@ The king is wise`}
           </Card>
         </>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        title="Delete this phrase pack?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   )
 }
