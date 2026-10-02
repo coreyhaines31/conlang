@@ -37,12 +37,6 @@ export function CopyLanguageButton({ languageId, user }: CopyLanguageButtonProps
     setCopying(false)
   }
 
-  const handleAuthSuccess = () => {
-    setShowAuthModal(false)
-    // Reload to get user session, then they can click copy again
-    window.location.reload()
-  }
-
   return (
     <>
       <Button onClick={handleCopy} disabled={copying} size="lg">
@@ -51,7 +45,6 @@ export function CopyLanguageButton({ languageId, user }: CopyLanguageButtonProps
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
       />
     </>
   )

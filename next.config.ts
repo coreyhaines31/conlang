@@ -8,10 +8,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 // key defense-in-depth against an HTML-injection sanitizer bypass: even
 // if a malicious on*= attribute reaches the DOM, modern browsers refuse
 // to fire it. 'unsafe-inline' for style is required by Tailwind v4 +
-// Radix UI runtime styling.
+// Radix UI runtime styling. React needs eval() in development only.
+const devEval = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://cdn.usefathom.com",
+  `script-src 'self' 'unsafe-inline'${devEval} https://cdn.usefathom.com`,
   "script-src-elem 'self' 'unsafe-inline' https://cdn.usefathom.com",
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",

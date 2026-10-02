@@ -6,10 +6,9 @@ import { authClient } from '@/lib/auth-client'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
 }
 
-export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
@@ -21,14 +20,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     const { error } = await authClient.signIn.magicLink({
       email,
-      callbackURL: '/',
+      // Return to the page the visitor started from (e.g. a shared language).
+      callbackURL: window.location.pathname + window.location.search,
     })
 
     if (error) {
       setMessage({ type: 'error', text: error.message ?? 'Something went wrong.' })
     } else {
       setMessage({ type: 'success', text: 'Check your email for the login link!' })
-      onSuccess()
     }
     setLoading(false)
   }
