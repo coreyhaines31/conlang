@@ -30,12 +30,6 @@ export function VersionHistoryTab({
   const [newSnapshotDescription, setNewSnapshotDescription] = useState('')
   const [restoring, setRestoring] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (languageId && isAuthenticated) {
-      loadSnapshots()
-    }
-  }, [languageId, isAuthenticated])
-
   const loadSnapshots = async () => {
     if (!languageId) return
     
@@ -49,6 +43,13 @@ export function VersionHistoryTab({
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (languageId && isAuthenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch when the language changes; the loader sets its own loading flag
+      loadSnapshots()
+    }
+  }, [languageId, isAuthenticated])
 
   const handleCreateSnapshot = async () => {
     if (!languageId) return

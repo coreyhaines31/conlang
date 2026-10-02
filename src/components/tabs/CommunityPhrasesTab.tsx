@@ -49,13 +49,6 @@ export function CommunityPhrasesTab({
   const [newPackPhrases, setNewPackPhrases] = useState('')
   const [newPackTags, setNewPackTags] = useState('')
 
-  useEffect(() => {
-    loadCommunityPacks()
-    if (isAuthenticated) {
-      loadMyPacks()
-    }
-  }, [isAuthenticated])
-
   const loadCommunityPacks = async () => {
     setIsLoading(true)
     try {
@@ -76,6 +69,14 @@ export function CommunityPhrasesTab({
       console.error('Failed to load my phrase packs:', error)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; the loader sets its own loading flag
+    loadCommunityPacks()
+    if (isAuthenticated) {
+      loadMyPacks()
+    }
+  }, [isAuthenticated])
 
   const handleCreate = async () => {
     if (!newPackName.trim()) {

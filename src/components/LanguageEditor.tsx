@@ -110,6 +110,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (draftsJson) {
       try {
         drafts = (JSON.parse(draftsJson) as Draft[]).map(withLocalId)
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount
         setLocalDrafts(drafts)
         localStorage.setItem('languageDrafts', JSON.stringify(drafts))
       } catch (e) {
@@ -153,6 +154,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   useEffect(() => {
     if (currentLanguage && !currentLanguage.id && currentLanguage.name) {
       // Update or add to local drafts
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- TODO: move autosave into the currentLanguage setters
       setLocalDrafts(prev => {
         const existingIndex = prev.findIndex(d => d.localId === currentLanguage.localId)
         let newDrafts: Draft[]
@@ -175,6 +177,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (currentLanguage?.id && user) {
       getLexiconEntries(currentLanguage.id).then(setLexiconEntries).catch(console.error)
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear entries when no saved language is open
       setLexiconEntries([])
     }
   }, [currentLanguage?.id, user])
