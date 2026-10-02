@@ -259,7 +259,9 @@ Contributions welcome! Please:
 
 ## License
 
-MIT © 2024
+[FSL-1.1-MIT](LICENSE) © 2026 Corey Haines
+
+You can use, modify, and self-host Conlang for anything except offering a competing hosted product. Each release becomes MIT two years after it's published. See [fsl.software](https://fsl.software) for details.
 
 ---
 
