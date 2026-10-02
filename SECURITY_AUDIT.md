@@ -5,6 +5,8 @@
 **Date:** 2026-05-11
 **Methodology:** OWASP Top 10 (2021) source-code review + npm dependency audit, using the [briiirussell/cybersecurity-skills](https://github.com/briiirussell/cybersecurity-skills) `owasp-audit` and `dependency-audit` playbooks.
 
+> **Status (2026-10-01):** every code finding below has been fixed (#7). Dependencies are handled as advisories come in; Next.js was upgraded to 16.3.8 in #24. Report new vulnerabilities privately through [GitHub security advisories](https://github.com/coreyhaines31/conlang/security/advisories/new) rather than public issues.
+
 ## Summary
 
 | Severity | Count |

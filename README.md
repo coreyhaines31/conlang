@@ -82,33 +82,29 @@ Open [http://localhost:3001](http://localhost:3001)
 
 ### Environment Variables
 
-Create `.env.local`:
+Copy `.env.example` to `.env.local` and fill it in:
 
-```env
-# Supabase (required)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | Yes | Postgres connection string ([Neon](https://neon.tech) works well) |
+| `BETTER_AUTH_SECRET` | Yes | Session signing secret (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | Yes | App URL, `http://localhost:3001` locally |
+| `RESEND_API_KEY` | Yes | Sends magic-link sign-in emails via [Resend](https://resend.com) |
+| `CRON_SECRET` | No | Protects `/api/cron/keep-alive` |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Client error reporting |
+| `OPENAI_API_KEY` | No | AI glyph generation |
+| `AI_GATEWAY_API_KEY` | No | AI steps in the e2e tests |
 
-# Site URL (for auth redirects)
-NEXT_PUBLIC_SITE_URL=http://localhost:3001
-
-# OpenAI (optional, for AI glyph cleanup)
-OPENAI_API_KEY=sk-your-key
-```
+Signed-out visitors keep languages as local drafts in the browser, so you can explore most of the editor before setting up email.
 
 ### Database Setup
 
-1. Create a [Supabase](https://supabase.com) project
-2. Run migrations in the SQL Editor:
+The schema lives in `src/lib/db/schema.ts` (Drizzle). Push it to an empty database:
 
-```sql
--- Run in order:
--- 1. supabase/migrations/001_languages_table.sql
--- 2. supabase/migrations/002_lexicon_entries_table.sql
--- 3. supabase/migrations/003_snapshots_table.sql
+```bash
+export DATABASE_URL=postgres://...
+npx drizzle-kit push
 ```
-
-3. Enable Email auth in Authentication → Providers
 
 ---
 
@@ -116,13 +112,14 @@ OPENAI_API_KEY=sk-your-key
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | Components | shadcn/ui + Lucide Icons |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth (Magic Links) |
-| AI | OpenAI GPT-4o (optional) |
+| Database | Neon Postgres + Drizzle ORM |
+| Auth | Better Auth (magic links via Resend) |
+| AI | OpenAI (optional, glyph generation) |
+| Testing | Vitest, [e2e](https://tester.army/e2e) |
 | Hosting | Vercel |
 
 ---
@@ -134,9 +131,9 @@ src/
 ├── app/
 │   ├── page.tsx                 # Main editor
 │   ├── actions.ts               # Server actions (DB operations)
+│   ├── api/auth/[...all]/       # Better Auth handler
 │   ├── api/glyph/route.ts       # AI glyph generation
-│   ├── l/[slug]/page.tsx        # Public language view
-│   └── auth/callback/           # Auth handler
+│   └── l/[slug]/page.tsx        # Public language view
 ├── components/
 │   ├── LanguageEditor.tsx       # Main editor shell
 │   ├── EditorNavigation.tsx     # Sidebar navigation
@@ -156,7 +153,9 @@ src/
     ├── morphology.ts            # Affix system
     ├── script.ts                # Writing system utilities
     ├── textGenerator.ts         # Gloss → conlang
-    └── supabase/                # DB client & types
+    ├── auth.ts                  # Better Auth config
+    └── db/                      # Drizzle client & schema
+tests/                           # e2e browser tests
 ```
 
 ---
@@ -219,10 +218,7 @@ A     @    76.76.21.21
 CNAME www  cname.vercel-dns.com
 ```
 
-Update Supabase redirect URLs:
-```
-https://yourdomain.com/auth/callback
-```
+Set `BETTER_AUTH_URL` to your domain.
 
 ---
 
@@ -240,9 +236,12 @@ npm run lint     # Lint code
 ### Testing
 
 ```bash
-npm run test           # Run all tests
+npm run test           # Unit tests (Vitest)
 npm run test:coverage  # With coverage report
+npm run test:e2e       # Browser tests in tests/*.e2e.ts
 ```
+
+The e2e tests start the dev server if it isn't running. Their AI steps need `AI_GATEWAY_API_KEY`; they also run in CI on every pull request.
 
 ---
 
@@ -260,7 +259,9 @@ Contributions welcome! Please:
 
 ## License
 
-MIT © 2024
+[FSL-1.1-MIT](LICENSE) © 2026 Corey Haines
+
+You can use, modify, and self-host Conlang for anything except offering a competing hosted product. Each release becomes MIT two years after it's published. See [fsl.software](https://fsl.software) for details.
 
 ---
 
@@ -268,5 +269,5 @@ MIT © 2024
 
 - [shadcn/ui](https://ui.shadcn.com/) for beautiful components
 - [Lucide](https://lucide.dev/) for icons
-- [Supabase](https://supabase.com/) for backend infrastructure
+- [Neon](https://neon.tech/) and [Better Auth](https://www.better-auth.com/) for the backend
 - The conlang community for inspiration
