@@ -115,7 +115,7 @@ export function PresetBrowser({
     }
   }
 
-  const getPresetContent = (type: PresetType): any => {
+  const getPresetContent = (type: PresetType): unknown => {
     switch (type) {
       case 'phonology':
         return definition.phonology

@@ -408,7 +408,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       definition: {
         ...(prev?.definition as LanguageDefinition),
         ...updates,
-      } as any,
+      },
     }))
   }
 
@@ -446,17 +446,17 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleApplyPreset = (preset: Preset) => {
     if (!currentLanguage) return
 
-    const content = preset.content as any
+    const content = preset.content as Partial<LanguageDefinition>
     
     switch (preset.type) {
       case 'phonology':
-        updateDefinition({ phonology: content })
+        updateDefinition({ phonology: content as LanguageDefinition['phonology'] })
         break
       case 'phonotactics':
-        updateDefinition({ phonotactics: content })
+        updateDefinition({ phonotactics: content as LanguageDefinition['phonotactics'] })
         break
       case 'morphology':
-        updateDefinition({ morphology: content })
+        updateDefinition({ morphology: content as LanguageDefinition['morphology'] })
         break
       case 'full':
         // Apply all parts of the preset

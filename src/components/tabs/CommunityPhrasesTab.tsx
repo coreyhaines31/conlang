@@ -25,9 +25,11 @@ import {
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { toast } from 'sonner'
 
+type PackPhrase = { id: string; english: string; gloss: string[]; category: string }
+
 interface CommunityPhrasesTabProps {
   isAuthenticated: boolean
-  onSelectPack?: (phrases: Array<{ id: string; english: string; gloss: string[]; category: string }>) => void
+  onSelectPack?: (phrases: PackPhrase[]) => void
 }
 
 export function CommunityPhrasesTab({ 
@@ -144,7 +146,7 @@ export function CommunityPhrasesTab({
 
   const handleSelectPack = (pack: CommunityPhrasePack) => {
     if (onSelectPack) {
-      onSelectPack(pack.phrases as any[])
+      onSelectPack(pack.phrases as PackPhrase[])
     }
   }
 
@@ -258,7 +260,7 @@ export function CommunityPhrasesTab({
                           )}
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-xs text-muted-foreground">
-                              {(pack.phrases as any[]).length} phrases • {pack.downloads} downloads
+                              {(pack.phrases as PackPhrase[]).length} phrases • {pack.downloads} downloads
                             </span>
                           </div>
                         </div>
@@ -396,7 +398,7 @@ The king is wise`}
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {(pack.phrases as any[]).length} phrases • {pack.downloads} downloads • {pack.isPublic ? 'Public' : 'Private'}
+                          {(pack.phrases as PackPhrase[]).length} phrases • {pack.downloads} downloads • {pack.isPublic ? 'Public' : 'Private'}
                         </p>
                       </div>
                       <Button
