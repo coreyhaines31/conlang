@@ -90,6 +90,7 @@ Copy `.env.example` to `.env.local` and fill it in:
 | `BETTER_AUTH_SECRET` | Yes | Session signing secret (`openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | Yes | App URL, `http://localhost:3001` locally |
 | `RESEND_API_KEY` | Yes | Sends magic-link sign-in emails via [Resend](https://resend.com) |
+| `SUPPORT_EMAIL` | Yes | Inbox for the in-app support form |
 | `CRON_SECRET` | No | Protects `/api/cron/keep-alive` |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Client error reporting |
 | `OPENAI_API_KEY` | No | AI glyph generation |
