@@ -44,6 +44,7 @@ RESEND_API_KEY=re_...
 CRON_SECRET=...            # for /api/cron/keep-alive
 NEXT_PUBLIC_SENTRY_DSN=... # optional, enables client error reporting
 OPENAI_API_KEY=sk-...      # optional, enables AI glyph generation
+AI_GATEWAY_API_KEY=...     # e2e agent steps (Vercel AI Gateway)
 ```
 
 ## Testing
@@ -52,7 +53,10 @@ OPENAI_API_KEY=sk-...      # optional, enables AI glyph generation
 npm run test        # Run tests in watch mode
 npm run test:run    # Run tests once
 npm run test:coverage  # Run with coverage
+npm run test:e2e    # Browser tests in tests/*.e2e.ts (starts the dev server if needed)
 ```
+
+E2E tests use [e2e](https://e2e.tester.army/docs) (`e2e.config.ts`). Agent steps call Vercel AI Gateway; `npx e2e guide` prints the skill.
 
 ## Database
 

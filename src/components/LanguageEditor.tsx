@@ -15,6 +15,19 @@ import {
   getLexiconEntries,
 } from '@/app/actions'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,24 +79,38 @@ const EMPTY_LANGUAGE: Partial<Language> = {
   },
 }
 
+// Drafts are keyed by localId, not seed, because the seed is user-editable.
+type Draft = Partial<Language> & { localId?: string }
+
+const newDraft = (): Draft => ({
+  ...EMPTY_LANGUAGE,
+  seed: Math.floor(Math.random() * 2147483647),
+  localId: crypto.randomUUID(),
+})
+
+const withLocalId = (draft: Draft): Draft =>
+  draft.localId ? draft : { ...draft, localId: crypto.randomUUID() }
+
 export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) {
   const [languages, setLanguages] = useState(initialLanguages)
-  const [currentLanguage, setCurrentLanguage] = useState<Partial<Language> | null>(null)
-  const [localDrafts, setLocalDrafts] = useState<Partial<Language>[]>([])
+  const [currentLanguage, setCurrentLanguage] = useState<Draft | null>(null)
+  const [localDrafts, setLocalDrafts] = useState<Draft[]>([])
   const [lexiconEntries, setLexiconEntries] = useState<LexiconEntry[]>([])
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [draftToDelete, setDraftToDelete] = useState<Draft | null>(null)
   // Load drafts from localStorage on mount
   useEffect(() => {
     // Load all local drafts
     const draftsJson = localStorage.getItem('languageDrafts')
-    let drafts: Partial<Language>[] = []
+    let drafts: Draft[] = []
     if (draftsJson) {
       try {
-        drafts = JSON.parse(draftsJson)
+        drafts = (JSON.parse(draftsJson) as Draft[]).map(withLocalId)
         setLocalDrafts(drafts)
+        localStorage.setItem('languageDrafts', JSON.stringify(drafts))
       } catch (e) {
         console.error('Failed to parse drafts', e)
       }
@@ -95,7 +122,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       try {
         const parsed = JSON.parse(legacyDraft)
         if (parsed.name) {
-          drafts = [parsed]
+          drafts = [withLocalId(parsed)]
           setLocalDrafts(drafts)
           localStorage.setItem('languageDrafts', JSON.stringify(drafts))
           localStorage.removeItem('languageDraft')
@@ -118,7 +145,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
     
     // Otherwise, start with a fresh new language (no empty state)
-    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+    setCurrentLanguage(newDraft())
   }, [])
 
   // Save current language to local drafts when it changes (for unsaved languages)
@@ -126,8 +153,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (currentLanguage && !currentLanguage.id && currentLanguage.name) {
       // Update or add to local drafts
       setLocalDrafts(prev => {
-        const existingIndex = prev.findIndex(d => d.seed === currentLanguage.seed)
-        let newDrafts: Partial<Language>[]
+        const existingIndex = prev.findIndex(d => d.localId === currentLanguage.localId)
+        let newDrafts: Draft[]
         if (existingIndex >= 0) {
           newDrafts = [...prev]
           newDrafts[existingIndex] = currentLanguage
@@ -152,7 +179,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   }, [currentLanguage?.id, user])
 
   const handleNewLanguage = () => {
-    setCurrentLanguage({ ...EMPTY_LANGUAGE, seed: Math.floor(Math.random() * 2147483647) })
+    setCurrentLanguage(newDraft())
     setActiveTab('overview')
   }
 
@@ -165,11 +192,26 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
   }
 
+  const handleDeleteDraft = (draft: Draft) => {
+    const newDrafts = localDrafts.filter(d => d.localId !== draft.localId)
+    setLocalDrafts(newDrafts)
+    localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
+    // If the deleted draft is open, switch away so autosave doesn't re-add it
+    if (!currentLanguage?.id && currentLanguage?.localId === draft.localId) {
+      if (newDrafts.length > 0) {
+        setCurrentLanguage(newDrafts[0])
+      } else {
+        setCurrentLanguage(newDraft())
+      }
+    }
+    toast.success('Draft deleted')
+  }
+
   const handleSaveToLocal = () => {
     if (!currentLanguage?.name) return
     // Save current language to local drafts
-    const existingIndex = localDrafts.findIndex(d => d.seed === currentLanguage.seed)
-    let newDrafts: Partial<Language>[]
+    const existingIndex = localDrafts.findIndex(d => d.localId === currentLanguage.localId)
+    let newDrafts: Draft[]
     if (existingIndex >= 0) {
       newDrafts = [...localDrafts]
       newDrafts[existingIndex] = currentLanguage
@@ -178,7 +220,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
     setLocalDrafts(newDrafts)
     localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
-    alert('Saved to local storage!')
+    toast.success('Saved to local storage')
   }
 
   const handleSaveToAccount = async () => {
@@ -229,7 +271,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       }
     } catch (error) {
       console.error('Save failed:', error)
-      alert('Failed to save: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      toast.error('Failed to save', { description: error instanceof Error ? error.message : 'Unknown error' })
     }
     setSaving(false)
   }
@@ -269,15 +311,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
   const handleDelete = async () => {
     if (!currentLanguage?.id || !user) return
-    if (!confirm('Are you sure you want to delete this language?')) return
 
     try {
       await deleteLanguage(currentLanguage.id)
       setLanguages(prev => prev.filter(l => l.id !== currentLanguage.id))
       setCurrentLanguage(null)
+      toast.success('Language deleted')
     } catch (error) {
       console.error('Delete failed:', error)
-      alert('Failed to delete language')
+      toast.error('Failed to delete language')
     }
   }
 
@@ -293,7 +335,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       }
     } catch (error) {
       console.error('Duplicate failed:', error)
-      alert('Failed to duplicate language')
+      toast.error('Failed to duplicate language')
     }
     setSaving(false)
   }
@@ -334,7 +376,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
 
         if (user) {
           // Import as new language
-          const imported: Partial<Language> = {
+          const imported: Draft = {
+            localId: crypto.randomUUID(),
             name: `${data.name} (Imported)`,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
@@ -344,7 +387,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           setActiveTab('overview')
         } else {
           // Import as local draft
-          const imported: Partial<Language> = {
+          const imported: Draft = {
+            localId: crypto.randomUUID(),
             name: data.name,
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
@@ -355,7 +399,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         }
       } catch (error) {
         console.error('Import failed:', error)
-        alert('Failed to import: Invalid JSON file')
+        toast.error('Failed to import: invalid JSON file')
       }
     }
     input.click()
@@ -374,7 +418,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleAddToLexicon = async (entries: Array<{ gloss: string; phonemic: string; orthographic: string }>) => {
     if (!currentLanguage?.id || !user) {
       // For local draft, just show an alert
-      alert('Save your language first to add entries to the lexicon.')
+      toast('Save your language first to add entries to the lexicon.')
       return
     }
 
@@ -398,7 +442,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       setLexiconEntries(prev => [...prev, ...newEntries])
     } catch (error) {
       console.error('Failed to add entries to lexicon:', error)
-      alert('Failed to add some entries to the lexicon.')
+      toast.error('Failed to add some entries to the lexicon.')
     }
   }
 
@@ -483,6 +527,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
+            onDeleteDraft={setDraftToDelete}
           />
         </div>
         {/* Mobile: Language selector at top */}
@@ -496,6 +541,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
               setActiveTab('overview')
             }}
             onNewLanguage={handleNewLanguage}
+            onDeleteDraft={setDraftToDelete}
             onMobileClose={() => setMobileMenuOpen(false)}
           />
         </div>
@@ -574,41 +620,80 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           </div>
 
           {user && currentLanguage?.id && (
-            <div className="flex gap-1">
-              <Button
-                onClick={handleTogglePublic}
-                className="flex-1"
-                variant="outline"
-                size="sm"
-                aria-label={currentLanguage.isPublic ? 'Make private' : 'Make public'}
-              >
-                {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              </Button>
-              <ShareDialog
-                languageSlug={currentLanguage.slug || null}
-                languageName={currentLanguage.name || 'My Language'}
-                isPublic={currentLanguage.isPublic || false}
-                onTogglePublic={handleTogglePublic}
-              />
-              <Button
-                onClick={handleDuplicate}
-                disabled={saving}
-                variant="outline"
-                size="sm"
-                aria-label="Duplicate language"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleDelete}
-                variant="outline"
-                size="sm"
-                className="text-destructive"
-                aria-label="Delete language"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            <TooltipProvider delayDuration={300}>
+              <div className="flex gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleTogglePublic}
+                      className="flex-1"
+                      variant="outline"
+                      size="sm"
+                      aria-label={currentLanguage.isPublic ? 'Make private' : 'Make public'}
+                    >
+                      {currentLanguage.isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{currentLanguage.isPublic ? 'Make private' : 'Make public'}</TooltipContent>
+                </Tooltip>
+                <ShareDialog
+                  languageSlug={currentLanguage.slug || null}
+                  languageName={currentLanguage.name || 'My Language'}
+                  isPublic={currentLanguage.isPublic || false}
+                  onTogglePublic={handleTogglePublic}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleDuplicate}
+                      disabled={saving}
+                      variant="outline"
+                      size="sm"
+                      aria-label="Duplicate language"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Duplicate language</TooltipContent>
+                </Tooltip>
+                <AlertDialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive"
+                          aria-label="Delete language"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete language</TooltipContent>
+                  </Tooltip>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete &ldquo;{currentLanguage.name || 'this language'}&rdquo;?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently deletes the language and its lexicon. This can&apos;t be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </TooltipProvider>
           )}
 
           <SupportWidget isLoggedIn={!!user} />
@@ -863,6 +948,26 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         onClose={() => setShowAuthModal(false)}
         onSuccess={handleAuthSuccess}
       />
+
+      <AlertDialog open={!!draftToDelete} onOpenChange={(open) => !open && setDraftToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete draft &ldquo;{draftToDelete?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the draft from this browser. This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => draftToDelete && handleDeleteDraft(draftToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
