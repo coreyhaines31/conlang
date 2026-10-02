@@ -45,13 +45,6 @@ export function PresetBrowser({
   const [publishDescription, setPublishDescription] = useState('')
   const [publishTags, setPublishTags] = useState('')
 
-  useEffect(() => {
-    loadPresets()
-    if (isAuthenticated) {
-      loadMyPresets()
-    }
-  }, [isAuthenticated])
-
   const loadPresets = async () => {
     setIsLoading(true)
     try {
@@ -72,6 +65,14 @@ export function PresetBrowser({
       console.error('Failed to load my presets:', error)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; the loader sets its own loading flag
+    loadPresets()
+    if (isAuthenticated) {
+      loadMyPresets()
+    }
+  }, [isAuthenticated])
 
   const handlePublish = async () => {
     if (!publishName.trim()) {
@@ -114,7 +115,7 @@ export function PresetBrowser({
     }
   }
 
-  const getPresetContent = (type: PresetType): any => {
+  const getPresetContent = (type: PresetType): unknown => {
     switch (type) {
       case 'phonology':
         return definition.phonology

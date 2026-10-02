@@ -240,7 +240,7 @@ export function ScriptTab({ definition, onUpdate }: ScriptTabProps) {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={writingSystem.direction}
-                onChange={(e) => updateWritingSystem({ direction: e.target.value as any })}
+                onChange={(e) => updateWritingSystem({ direction: e.target.value as WritingSystem['direction'] })}
               >
                 <option value="ltr">Left to Right</option>
                 <option value="rtl">Right to Left</option>

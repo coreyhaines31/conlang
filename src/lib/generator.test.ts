@@ -533,7 +533,7 @@ describe('weighted syllable templates', () => {
         vowels: ['a'],
       },
       phonotactics: {
-        syllableTemplates: ['CV', 'CVC'] as any, // Old format
+        syllableTemplates: ['CV', 'CVC'] as unknown as Phonotactics['syllableTemplates'], // Old format
         forbiddenSequences: [],
       },
     }

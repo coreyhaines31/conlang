@@ -30,6 +30,7 @@ interface TextGeneratorTabProps {
 }
 
 type InputMode = 'visual' | 'notation'
+type WordFeatures = NonNullable<GlossWord['features']>
 
 const ROLES: Array<{ value: GlossWord['role']; label: string }> = [
   { value: 'S', label: 'Subject (S)' },
@@ -302,7 +303,7 @@ export function TextGeneratorTab({
                         <Label className="text-xs">Number</Label>
                         <select
                           value={word.features.number || ''}
-                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { number: e.target.value as any || undefined })}
+                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { number: (e.target.value || undefined) as WordFeatures['number'] })}
                           className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                         >
                           <option value="">-</option>
@@ -317,7 +318,7 @@ export function TextGeneratorTab({
                         <Label className="text-xs">Tense</Label>
                         <select
                           value={word.features.tense || ''}
-                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { tense: e.target.value as any || undefined })}
+                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { tense: (e.target.value || undefined) as WordFeatures['tense'] })}
                           className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                         >
                           <option value="">-</option>
@@ -332,7 +333,7 @@ export function TextGeneratorTab({
                         <Label className="text-xs">Person</Label>
                         <select
                           value={word.features.person || ''}
-                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { person: e.target.value as any || undefined })}
+                          onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { person: (e.target.value || undefined) as WordFeatures['person'] })}
                           className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                         >
                           <option value="">-</option>
@@ -376,7 +377,7 @@ export function TextGeneratorTab({
                           <Label className="text-xs">Case:</Label>
                           <select
                             value={word.features.case || ''}
-                            onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { case: e.target.value as any || undefined })}
+                            onChange={(e) => handleUpdateWordFeatures(clause.id, word.id, { case: (e.target.value || undefined) as WordFeatures['case'] })}
                             className="h-6 rounded border border-input bg-background px-1 text-xs"
                           >
                             <option value="">-</option>

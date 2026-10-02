@@ -6,11 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CopyLanguageButton } from '@/components/CopyLanguageButton'
 import { ScriptPreview } from '@/components/ScriptPreview'
 import { WritingSystem } from '@/lib/script'
+import type { LanguageDefinition } from '@/lib/generator'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { languages, lexiconEntries } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
+
+// sampleWords isn't written by the editor today; the sections below stay hidden until it is.
+type SharedDefinition = LanguageDefinition & { sampleWords?: string[] }
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -26,6 +30,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
     .limit(1)
 
   if (!language) notFound()
+  const definition = language.definition as SharedDefinition
 
   const entries = await db
     .select()
@@ -74,14 +79,14 @@ export default async function PublicLanguagePage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        {(language.definition as any)?.phonology && (
+        {definition.phonology && (
           <Card>
             <CardHeader><CardTitle>Phonology</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Consonants</h4>
                 <div className="flex flex-wrap gap-2">
-                  {((language.definition as any).phonology.consonants as string[])?.map((c, i) => (
+                  {definition.phonology.consonants?.map((c, i) => (
                     <span key={i} className="px-2 py-1 bg-secondary text-secondary-foreground rounded font-mono text-sm">{c}</span>
                   ))}
                 </div>
@@ -89,7 +94,7 @@ export default async function PublicLanguagePage({ params }: PageProps) {
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Vowels</h4>
                 <div className="flex flex-wrap gap-2">
-                  {((language.definition as any).phonology.vowels as string[])?.map((v, i) => (
+                  {definition.phonology.vowels?.map((v, i) => (
                     <span key={i} className="px-2 py-1 bg-secondary text-secondary-foreground rounded font-mono text-sm">{v}</span>
                   ))}
                 </div>
@@ -98,12 +103,12 @@ export default async function PublicLanguagePage({ params }: PageProps) {
           </Card>
         )}
 
-        {(language.definition as any)?.sampleWords && (
+        {definition.sampleWords && (
           <Card>
             <CardHeader><CardTitle>Sample Words</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {((language.definition as any).sampleWords as string[]).map((word, i) => (
+                {definition.sampleWords.map((word, i) => (
                   <span key={i} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md font-mono">{word}</span>
                 ))}
               </div>
@@ -111,8 +116,8 @@ export default async function PublicLanguagePage({ params }: PageProps) {
           </Card>
         )}
 
-        {(language.definition as any)?.writingSystem?.glyphs?.length > 0 && (() => {
-          const rawWritingSystem = (language.definition as any).writingSystem as WritingSystem
+        {(definition.writingSystem?.glyphs?.length ?? 0) > 0 && (() => {
+          const rawWritingSystem = definition.writingSystem as WritingSystem
           const safeWritingSystem: WritingSystem = {
             ...rawWritingSystem,
             glyphs: (rawWritingSystem.glyphs || []).map((g) => ({
@@ -130,12 +135,12 @@ export default async function PublicLanguagePage({ params }: PageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(language.definition as any)?.sampleWords && (
+              {definition.sampleWords && (
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">Sample in Script</h4>
                   <div className="border rounded-lg p-4 bg-secondary/20">
                     <ScriptPreview
-                      text={((language.definition as any).sampleWords as string[]).slice(0, 5).join(' ')}
+                      text={definition.sampleWords.slice(0, 5).join(' ')}
                       writingSystem={safeWritingSystem}
                     />
                   </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Language, LexiconEntry } from '@/lib/db/schema'
 import { AuthModal } from './auth/AuthModal'
 import { authClient } from '@/lib/auth-client'
@@ -109,6 +110,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (draftsJson) {
       try {
         drafts = (JSON.parse(draftsJson) as Draft[]).map(withLocalId)
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after mount
         setLocalDrafts(drafts)
         localStorage.setItem('languageDrafts', JSON.stringify(drafts))
       } catch (e) {
@@ -152,6 +154,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   useEffect(() => {
     if (currentLanguage && !currentLanguage.id && currentLanguage.name) {
       // Update or add to local drafts
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- TODO: move autosave into the currentLanguage setters
       setLocalDrafts(prev => {
         const existingIndex = prev.findIndex(d => d.localId === currentLanguage.localId)
         let newDrafts: Draft[]
@@ -174,6 +177,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     if (currentLanguage?.id && user) {
       getLexiconEntries(currentLanguage.id).then(setLexiconEntries).catch(console.error)
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear entries when no saved language is open
       setLexiconEntries([])
     }
   }, [currentLanguage?.id, user])
@@ -404,7 +408,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       definition: {
         ...(prev?.definition as LanguageDefinition),
         ...updates,
-      } as any,
+      },
     }))
   }
 
@@ -442,17 +446,17 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleApplyPreset = (preset: Preset) => {
     if (!currentLanguage) return
 
-    const content = preset.content as any
+    const content = preset.content as Partial<LanguageDefinition>
     
     switch (preset.type) {
       case 'phonology':
-        updateDefinition({ phonology: content })
+        updateDefinition({ phonology: content as LanguageDefinition['phonology'] })
         break
       case 'phonotactics':
-        updateDefinition({ phonotactics: content })
+        updateDefinition({ phonotactics: content as LanguageDefinition['phonotactics'] })
         break
       case 'morphology':
-        updateDefinition({ morphology: content })
+        updateDefinition({ morphology: content as LanguageDefinition['morphology'] })
         break
       case 'full':
         // Apply all parts of the preset
@@ -473,10 +477,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card border-b px-4 py-3 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" />
           <span className="font-semibold text-lg">Conlang</span>
-        </a>
+        </Link>
         <Button
           variant="ghost"
           size="icon"
@@ -507,10 +511,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       )}>
         {/* Logo & Header - Hidden on mobile since we have the mobile header */}
         <div className="p-4 border-b hidden md:block">
-          <a href="/" className="flex items-center gap-2 mb-3">
+          <Link href="/" className="flex items-center gap-2 mb-3">
             <img src="/conlang-icon.svg" alt="Conlang" className="h-6 w-auto" width={24} height={24} />
             <span className="font-semibold text-lg">Conlang</span>
-          </a>
+          </Link>
           <LanguageSelector
             currentLanguage={currentLanguage}
             savedLanguages={languages}
