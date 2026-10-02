@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { toast } from 'sonner'
 
 interface CommunityPhrasesTabProps {
   isAuthenticated: boolean
@@ -78,7 +79,7 @@ export function CommunityPhrasesTab({
 
   const handleCreate = async () => {
     if (!newPackName.trim()) {
-      alert('Please enter a name for your phrase pack')
+      toast.error('Please enter a name for your phrase pack')
       return
     }
 
@@ -105,7 +106,7 @@ export function CommunityPhrasesTab({
     })
 
     if (phrases.length === 0) {
-      alert('Please add at least one phrase')
+      toast.error('Please add at least one phrase')
       return
     }
 
@@ -127,7 +128,7 @@ export function CommunityPhrasesTab({
       await loadMyPacks()
     } catch (error) {
       console.error('Failed to create phrase pack:', error)
-      alert('Failed to create phrase pack. Please try again.')
+      toast.error('Failed to create phrase pack. Please try again.')
     }
   }
 

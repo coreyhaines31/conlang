@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { toast } from 'sonner'
 
 interface LexiconTabProps {
   languageId?: string
@@ -94,7 +95,7 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
       setEditingEntry(null)
     } catch (error) {
       console.error('Save failed:', error)
-      alert('Failed to save entry')
+      toast.error('Failed to save entry')
     }
   }
 
@@ -104,7 +105,7 @@ export function LexiconTab({ languageId, entries, onEntriesChange, user }: Lexic
       onEntriesChange(entries.filter(e => e.id !== id))
     } catch (error) {
       console.error('Delete failed:', error)
-      alert('Failed to delete entry')
+      toast.error('Failed to delete entry')
     }
   }
 

@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 interface PresetBrowserProps {
   definition: LanguageDefinition
@@ -74,13 +75,13 @@ export function PresetBrowser({
 
   const handlePublish = async () => {
     if (!publishName.trim()) {
-      alert('Please enter a name for your preset')
+      toast.error('Please enter a name for your preset')
       return
     }
 
     const content = getPresetContent(publishType)
     if (!content) {
-      alert('Nothing to publish. Make sure your language has content for this preset type.')
+      toast.error('Nothing to publish. Make sure your language has content for this preset type.')
       return
     }
 
@@ -100,7 +101,7 @@ export function PresetBrowser({
       await loadMyPresets()
     } catch (error) {
       console.error('Failed to publish preset:', error)
-      alert('Failed to publish preset. Please try again.')
+      toast.error('Failed to publish preset. Please try again.')
     }
   }
 
