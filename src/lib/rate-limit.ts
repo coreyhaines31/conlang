@@ -84,14 +84,14 @@ export function rateLimit(
 }
 
 // Helper to get client IP from request headers
-export function getClientIP(request: Request): string {
+export function getClientIP(headers: Headers): string {
   // Vercel/Cloudflare headers
-  const forwarded = request.headers.get('x-forwarded-for')
+  const forwarded = headers.get('x-forwarded-for')
   if (forwarded) {
     return forwarded.split(',')[0].trim()
   }
   
-  const realIP = request.headers.get('x-real-ip')
+  const realIP = headers.get('x-real-ip')
   if (realIP) {
     return realIP
   }
