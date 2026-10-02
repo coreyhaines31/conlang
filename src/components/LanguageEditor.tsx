@@ -220,7 +220,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
     }
     setLocalDrafts(newDrafts)
     localStorage.setItem('languageDrafts', JSON.stringify(newDrafts))
-    alert('Saved to local storage!')
+    toast.success('Saved to local storage')
   }
 
   const handleSaveToAccount = async () => {
@@ -271,7 +271,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       }
     } catch (error) {
       console.error('Save failed:', error)
-      alert('Failed to save: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      toast.error('Failed to save', { description: error instanceof Error ? error.message : 'Unknown error' })
     }
     setSaving(false)
   }
@@ -335,7 +335,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       }
     } catch (error) {
       console.error('Duplicate failed:', error)
-      alert('Failed to duplicate language')
+      toast.error('Failed to duplicate language')
     }
     setSaving(false)
   }
@@ -399,7 +399,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         }
       } catch (error) {
         console.error('Import failed:', error)
-        alert('Failed to import: Invalid JSON file')
+        toast.error('Failed to import: invalid JSON file')
       }
     }
     input.click()
@@ -418,7 +418,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
   const handleAddToLexicon = async (entries: Array<{ gloss: string; phonemic: string; orthographic: string }>) => {
     if (!currentLanguage?.id || !user) {
       // For local draft, just show an alert
-      alert('Save your language first to add entries to the lexicon.')
+      toast('Save your language first to add entries to the lexicon.')
       return
     }
 
@@ -442,7 +442,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       setLexiconEntries(prev => [...prev, ...newEntries])
     } catch (error) {
       console.error('Failed to add entries to lexicon:', error)
-      alert('Failed to add some entries to the lexicon.')
+      toast.error('Failed to add some entries to the lexicon.')
     }
   }
 

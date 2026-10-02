@@ -13,13 +13,8 @@ test('a visitor creates a language and generates words', async ({ app, agent, sc
   await screen.getByRole('button', 'Generate').tap();
   await expect(screen.getByText('Generated Words (20)')).toBeVisible();
 
-  let alertMessage = '';
-  await browser.onDialog(async (dialog) => {
-    alertMessage = dialog.message;
-    await dialog.accept();
-  });
   await screen.getByRole('button', 'Save Local').tap();
-  expect(alertMessage).toBe('Saved to local storage!');
+  await expect(screen.getByText('Saved to local storage')).toBeVisible();
   await browser.reload();
   await agent.act('open the language selector');
   await agent.assert('Eldarin is listed under Local Drafts');
