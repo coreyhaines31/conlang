@@ -271,6 +271,33 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           setLanguages(prev => [created, ...prev])
           setCurrentLanguage(created)
           localStorage.removeItem('languageDraft')
+          
+          // Save imported lexicon entries if any exist
+          if (lexiconEntries.length > 0 && lexiconEntries[0]?.id?.startsWith('imported-')) {
+            const { createLexiconEntry } = await import('@/app/actions')
+            const savedEntries: LexiconEntry[] = []
+            
+            for (const entry of lexiconEntries) {
+              try {
+                const saved = await createLexiconEntry(
+                  created.id,
+                  entry.gloss,
+                  entry.partOfSpeech || undefined,
+                  entry.phonemicForm || undefined,
+                  entry.orthographicForm || undefined,
+                  entry.tags.length > 0 ? entry.tags : undefined,
+                  entry.notes || undefined
+                )
+                if (saved) {
+                  savedEntries.push(saved)
+                }
+              } catch (error) {
+                console.error('Failed to save lexicon entry:', error)
+              }
+            }
+            
+            setLexiconEntries(savedEntries)
+          }
         }
       }
     } catch (error) {
@@ -381,6 +408,26 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             definition: data.definition,
           }
           setCurrentLanguage(imported)
+          
+          // Restore lexicon entries with temporary IDs for unsaved language
+          if (data.lexicon && Array.isArray(data.lexicon)) {
+            const importedEntries = data.lexicon.map((entry: any, i: number) => ({
+              id: `imported-${Date.now()}-${i}`,
+              languageId: '',
+              gloss: entry.gloss || '',
+              partOfSpeech: entry.partOfSpeech || null,
+              phonemicForm: entry.phonemicForm || null,
+              orthographicForm: entry.orthographicForm || null,
+              tags: entry.tags || [],
+              notes: entry.notes || null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }))
+            setLexiconEntries(importedEntries)
+          } else {
+            setLexiconEntries([])
+          }
+          
           setActiveTab('overview')
         } else {
           // Import as local draft
@@ -392,6 +439,10 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             definition: data.definition,
           }
           setCurrentLanguage(imported)
+          
+          // For local drafts, clear lexicon entries (they need a saved language)
+          setLexiconEntries([])
+          
           setActiveTab('overview')
         }
       } catch (error) {
