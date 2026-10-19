@@ -93,8 +93,8 @@ Copy `.env.example` to `.env.local` and fill it in:
 | `SUPPORT_EMAIL` | Yes | Inbox for the in-app support form |
 | `CRON_SECRET` | No | Protects `/api/cron/keep-alive` |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Client error reporting |
-| `OPENAI_API_KEY` | No | AI glyph generation |
-| `AI_GATEWAY_API_KEY` | No | AI steps in the e2e tests |
+| `AI_GATEWAY_API_KEY` | No | [Vercel AI Gateway](https://vercel.com/ai-gateway) key for AI glyph generation and e2e AI steps (not needed on Vercel, which uses OIDC) |
+| `GLYPH_MODEL` | No | Override the glyph model with any vision-capable AI Gateway model ID |
 
 Signed-out visitors keep languages as local drafts in the browser, so you can explore most of the editor before setting up email.
 
@@ -119,7 +119,7 @@ npx drizzle-kit push
 | Components | shadcn/ui + Lucide Icons |
 | Database | Neon Postgres + Drizzle ORM |
 | Auth | Better Auth (magic links via Resend) |
-| AI | OpenAI (optional, glyph generation) |
+| AI | Vercel AI Gateway + AI SDK (optional, glyph generation) |
 | Testing | Vitest, [e2e](https://tester.army/e2e) |
 | Hosting | Vercel |
 
