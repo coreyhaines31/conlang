@@ -26,6 +26,7 @@ test('importing a language file keeps its lexicon on the draft', async ({ app, s
       this.files = files.files;
       this.dispatchEvent(new Event('change'));
     };
+    return null;
   }, JSON.stringify(exported));
 
   await screen.getByRole('button', 'Import').tap();
