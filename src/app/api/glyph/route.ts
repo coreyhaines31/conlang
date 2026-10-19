@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { generateText, RetryError } from 'ai'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
+
+// Any vision-capable AI Gateway model ID works. Override with GLYPH_MODEL to
+// switch models without a code change; the fallbacks cover provider outages.
+const DEFAULT_GLYPH_MODEL = 'anthropic/claude-haiku-5.5'
+const FALLBACK_GLYPH_MODELS = ['google/gemini-2.5-flash-lite', 'openai/gpt-6-luna']
 
 // Rate limit: 10 AI glyph generations per minute per IP
 const RATE_LIMIT_CONFIG = {
@@ -35,17 +40,6 @@ export async function POST(request: NextRequest) {
 
     const { sketchDataUrl, style, phoneme } = await request.json()
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
-        { status: 500 }
-      )
-    }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-
     // Style descriptions for different glyph aesthetics
     const stylePrompts: Record<string, string> = {
       runic: 'angular, carved stone runes with sharp edges, Norse/Elder Futhark inspired',
@@ -61,12 +55,14 @@ export async function POST(request: NextRequest) {
     const styleDescription = stylePrompts[style] || stylePrompts.geometric
 
     // Generate a clean glyph based on the sketch
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a writing system designer. When given a rough sketch of a glyph, you create a clean, stylized SVG version.
+    const model = process.env.GLYPH_MODEL || DEFAULT_GLYPH_MODEL
+    const { text: svgContent } = await generateText({
+      model,
+      providerOptions: {
+        gateway: { models: FALLBACK_GLYPH_MODELS.filter((m) => m !== model) },
+      },
+      reasoning: 'none',
+      instructions: `You are a writing system designer. When given a rough sketch of a glyph, you create a clean, stylized SVG version.
 
 Output ONLY valid SVG code with these requirements:
 - viewBox="0 0 100 100"
@@ -76,8 +72,8 @@ Output ONLY valid SVG code with these requirements:
 - No text elements, only paths/shapes
 - Make it look intentional and designed, not random
 
-The glyph should be ${styleDescription}.`
-        },
+The glyph should be ${styleDescription}.`,
+      messages: [
         {
           role: 'user',
           content: [
@@ -86,19 +82,15 @@ The glyph should be ${styleDescription}.`
               text: `Create a clean, stylized glyph for the sound "${phoneme}" based on this rough sketch. Output only the SVG code, nothing else.`
             },
             {
-              type: 'image_url',
-              image_url: {
-                url: sketchDataUrl,
-                detail: 'low'
-              }
+              type: 'file',
+              mediaType: 'image/png',
+              data: sketchDataUrl,
             }
           ]
         }
       ],
-      max_tokens: 1000,
+      maxOutputTokens: 1000,
     })
-
-    const svgContent = response.choices[0]?.message?.content || ''
 
     // Extract just the SVG if wrapped in markdown
     let cleanSvg = svgContent
@@ -131,47 +123,43 @@ The glyph should be ${styleDescription}.`
       }
     )
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status?: number; code?: string; message?: string }
+    // Retryable failures arrive wrapped in a RetryError after the SDK gives up.
+    const cause = RetryError.isInstance(error) ? error.lastError : error
+    const { statusCode, type } = (cause ?? {}) as { statusCode?: number; type?: string }
 
-      // OpenAI returns 429 both for an exhausted account (insufficient_quota)
-      // and for short-lived per-minute rate limits.
-      if (apiError.status === 429) {
-        const isQuota = apiError.code === 'insufficient_quota'
-        console.error(isQuota ? 'OpenAI quota exceeded:' : 'OpenAI rate limited:', {
-          status: apiError.status,
-          code: apiError.code,
-        })
+    // AI Gateway returns 402 when credits or a budget run out, and 429 for
+    // short-lived rate limits.
+    if (statusCode === 402 || statusCode === 429) {
+      const isQuota = statusCode === 402
+      console.error(isQuota ? 'AI Gateway credits exhausted:' : 'AI Gateway rate limited:', {
+        statusCode,
+        type,
+      })
 
-        return NextResponse.json(
-          isQuota
-            ? {
-                error: 'Glyph generation is temporarily unavailable. Please try again later.',
-                code: 'service_unavailable',
-              }
-            : {
-                error: 'Glyph generation is busy right now. Please try again in a minute.',
-                code: 'rate_limited',
-              },
-          {
-            status: isQuota ? 503 : 429,
-            headers: { 'Retry-After': isQuota ? '3600' : '60' },
-          }
-        )
-      }
-      
-      // Log other API errors with status/code only
-      console.error('OpenAI API error:', {
-        status: apiError.status,
-        code: apiError.code,
-      })
-    } else {
-      console.error('Glyph generation error:', {
-        type: error?.constructor?.name,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      })
+      return NextResponse.json(
+        isQuota
+          ? {
+              error: 'Glyph generation is temporarily unavailable. Please try again later.',
+              code: 'service_unavailable',
+            }
+          : {
+              error: 'Glyph generation is busy right now. Please try again in a minute.',
+              code: 'rate_limited',
+            },
+        {
+          status: isQuota ? 503 : 429,
+          headers: { 'Retry-After': isQuota ? '3600' : '60' },
+        }
+      )
     }
-    
+
+    console.error('Glyph generation error:', {
+      name: cause instanceof Error ? cause.name : typeof cause,
+      statusCode,
+      type,
+      message: cause instanceof Error ? cause.message : 'Unknown error',
+    })
+
     return NextResponse.json(
       { error: 'Failed to generate glyph' },
       { status: 500 }
