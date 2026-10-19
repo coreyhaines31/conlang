@@ -81,6 +81,30 @@ describe('POST /api/glyph', () => {
     expect(response.headers.get('Retry-After')).toBe('3600')
   })
 
+  it('returns 429 with short Retry-After for transient OpenAI rate limits', async () => {
+    mockChatCompletions.create.mockRejectedValueOnce({
+      status: 429,
+      code: 'rate_limit_exceeded',
+      message: 'Rate limit reached',
+    })
+
+    const request = new NextRequest('http://localhost:3001/api/glyph', {
+      method: 'POST',
+      body: JSON.stringify({
+        sketchDataUrl: 'data:image/png;base64,test',
+        style: 'geometric',
+        phoneme: 'a',
+      }),
+    })
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(429)
+    expect(data.code).toBe('rate_limited')
+    expect(response.headers.get('Retry-After')).toBe('60')
+  })
+
   it('returns 500 for non-429 OpenAI errors', async () => {
     const genericError = {
       status: 500,
