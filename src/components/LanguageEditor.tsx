@@ -410,7 +410,8 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
         }
 
         if (pendingLexicon.length > 0) {
-          toast(`${pendingLexicon.length} lexicon entries will be added when you save this language.`)
+          const count = pendingLexicon.length === 1 ? '1 lexicon entry' : `${pendingLexicon.length} lexicon entries`
+          toast(`${count} will be added when you save this language.`)
         }
       } catch (error) {
         console.error('Import failed:', error)
