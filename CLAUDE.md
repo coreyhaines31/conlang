@@ -16,7 +16,7 @@ Development server runs at **http://localhost:3001**
 - Tailwind CSS v4
 - Neon Postgres + Drizzle ORM (`@neondatabase/serverless`, `drizzle-orm`)
 - Better Auth (magic-link via Resend)
-- OpenAI (optional, for AI glyph generation)
+- Vercel AI Gateway via AI SDK (optional, for AI glyph generation)
 - Sentry (error tracking, tunnelled at `/monitoring`)
 
 ## Key Files
@@ -44,8 +44,8 @@ RESEND_API_KEY=re_...
 SUPPORT_EMAIL=...          # inbox for the support form
 CRON_SECRET=...            # for /api/cron/keep-alive
 NEXT_PUBLIC_SENTRY_DSN=... # optional, enables client error reporting
-OPENAI_API_KEY=sk-...      # optional, enables AI glyph generation
-AI_GATEWAY_API_KEY=...     # e2e agent steps (Vercel AI Gateway)
+AI_GATEWAY_API_KEY=...     # AI glyph generation + e2e agent steps (OIDC on Vercel)
+GLYPH_MODEL=...            # optional, any vision-capable AI Gateway model ID
 ```
 
 ## Testing
