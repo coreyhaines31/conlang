@@ -396,7 +396,8 @@ export function GlyphCanvas({ onSave, phoneme = '' }: GlyphCanvasProps) {
       clearCanvas()
     } catch (error) {
       console.error('Stylization error:', error)
-      toast.error(`${error instanceof Error ? error.message : 'Something went wrong.'} Using procedural stylization instead.`)
+      const message = error instanceof Error ? error.message.replace(/\.$/, '') : 'Something went wrong'
+      toast.error(`${message}. Using procedural stylization instead.`)
       // Fallback to procedural
       const svg = stylizePaths(paths, style)
       onSave(svg)
