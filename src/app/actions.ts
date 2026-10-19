@@ -18,6 +18,7 @@ import {
 } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { sanitizeLanguageDefinition } from '@/lib/sanitize-svg'
+import { parseImportedLexicon } from '@/lib/lexicon-import'
 
 async function requireUser() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -245,6 +246,32 @@ export async function createLexiconEntry(
 
   revalidatePath('/')
   return row
+}
+
+export async function importLexiconEntries(
+  languageId: string,
+  entries: unknown
+): Promise<LexiconEntry[]> {
+  const user = await requireUser()
+
+  const [lang] = await db
+    .select({ id: languages.id })
+    .from(languages)
+    .where(and(eq(languages.id, languageId), eq(languages.userId, user.id)))
+    .limit(1)
+
+  if (!lang) throw new Error('Language not found')
+
+  const parsed = parseImportedLexicon(entries)
+  if (parsed.length === 0) return []
+
+  const rows = await db
+    .insert(lexiconEntries)
+    .values(parsed.map((entry) => ({ ...entry, languageId })))
+    .returning()
+
+  revalidatePath('/')
+  return rows
 }
 
 export async function updateLexiconEntry(
