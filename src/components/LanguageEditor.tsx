@@ -14,7 +14,9 @@ import {
   duplicateLanguage,
   createSlug,
   getLexiconEntries,
+  importLexiconEntries,
 } from '@/app/actions'
+import { parseImportedLexicon, type ImportedLexiconEntry } from '@/lib/lexicon-import'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -81,7 +83,8 @@ const EMPTY_LANGUAGE: Partial<Language> = {
 }
 
 // Drafts are keyed by localId, not seed, because the seed is user-editable.
-type Draft = Partial<Language> & { localId?: string }
+// pendingLexicon holds imported entries until the draft is saved and has an id.
+type Draft = Partial<Language> & { localId?: string; pendingLexicon?: ImportedLexiconEntry[] }
 
 const newDraft = (): Draft => ({
   ...EMPTY_LANGUAGE,
@@ -268,6 +271,14 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
           false
         )
         if (created) {
+          if (currentLanguage.pendingLexicon?.length) {
+            try {
+              await importLexiconEntries(created.id, currentLanguage.pendingLexicon)
+            } catch (error) {
+              console.error('Lexicon import failed:', error)
+              toast.error('Language saved, but its imported lexicon could not be added.')
+            }
+          }
           setLanguages(prev => [created, ...prev])
           setCurrentLanguage(created)
           localStorage.removeItem('languageDraft')
@@ -370,6 +381,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
       try {
         const text = await file.text()
         const data = JSON.parse(text)
+        const pendingLexicon = parseImportedLexicon(data.lexicon)
 
         if (user) {
           // Import as new language
@@ -379,6 +391,7 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
             definition: data.definition,
+            pendingLexicon,
           }
           setCurrentLanguage(imported)
           setActiveTab('overview')
@@ -390,9 +403,15 @@ export function LanguageEditor({ initialLanguages, user }: LanguageEditorProps) 
             seed: data.seed || Math.floor(Math.random() * 2147483647),
             generatorVersion: data.generator_version || data.generatorVersion || '1.0.0',
             definition: data.definition,
+            pendingLexicon,
           }
           setCurrentLanguage(imported)
           setActiveTab('overview')
+        }
+
+        if (pendingLexicon.length > 0) {
+          const count = pendingLexicon.length === 1 ? '1 lexicon entry' : `${pendingLexicon.length} lexicon entries`
+          toast(`${count} will be added when you save this language.`)
         }
       } catch (error) {
         console.error('Import failed:', error)
