@@ -23,11 +23,11 @@ const mockSanitize = vi.hoisted(() => ({
 
 vi.mock('@/lib/sanitize-svg', () => mockSanitize)
 
-function glyphRequest() {
+function glyphRequest(sketchDataUrl = 'data:image/png;base64,test') {
   return new NextRequest('http://localhost:3001/api/glyph', {
     method: 'POST',
     body: JSON.stringify({
-      sketchDataUrl: 'data:image/png;base64,test',
+      sketchDataUrl,
       style: 'geometric',
       phoneme: 'a',
     }),
@@ -157,6 +157,17 @@ describe('POST /api/glyph', () => {
 
     expect(response.status).toBe(429)
     expect(data.error).toContain('Rate limit exceeded')
+    expect(mockGenerateText).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['a remote URL', 'http://169.254.169.254/latest/meta-data'],
+    ['a non-PNG data URL', 'data:image/svg+xml;base64,PHN2Zz4='],
+    ['an oversized image', 'data:image/png;base64,' + 'A'.repeat(2_000_000)],
+  ])('returns 400 and skips the model for %s', async (_, sketchDataUrl) => {
+    const response = await POST(glyphRequest(sketchDataUrl))
+
+    expect(response.status).toBe(400)
     expect(mockGenerateText).not.toHaveBeenCalled()
   })
 

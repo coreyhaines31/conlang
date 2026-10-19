@@ -8,6 +8,9 @@ import { sanitizeGlyphSvg } from '@/lib/sanitize-svg'
 const DEFAULT_GLYPH_MODEL = 'anthropic/claude-haiku-5.5'
 const FALLBACK_GLYPH_MODELS = ['google/gemini-2.5-flash-lite', 'openai/gpt-6-luna']
 
+// ~2MB of base64; canvas sketches are far smaller
+const MAX_SKETCH_LENGTH = 2_000_000
+
 // Rate limit: 10 AI glyph generations per minute per IP
 const RATE_LIMIT_CONFIG = {
   limit: 10,
@@ -39,6 +42,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { sketchDataUrl, style, phoneme } = await request.json()
+
+    // Only accept the canvas PNG; a URL here would make the server fetch it.
+    if (
+      typeof sketchDataUrl !== 'string' ||
+      !sketchDataUrl.startsWith('data:image/png;base64,') ||
+      sketchDataUrl.length > MAX_SKETCH_LENGTH
+    ) {
+      return NextResponse.json({ error: 'Invalid sketch image' }, { status: 400 })
+    }
 
     // Style descriptions for different glyph aesthetics
     const stylePrompts: Record<string, string> = {
