@@ -131,7 +131,42 @@ The glyph should be ${styleDescription}.`
       }
     )
   } catch (error: unknown) {
-    console.error('Glyph generation error:', error)
+    // Check if this is an OpenAI API quota error (429)
+    if (error && typeof error === 'object' && 'status' in error) {
+      const apiError = error as { status?: number; code?: string; message?: string }
+      
+      if (apiError.status === 429) {
+        console.error('OpenAI quota exceeded:', {
+          status: apiError.status,
+          code: apiError.code,
+        })
+        
+        return NextResponse.json(
+          { 
+            error: 'Glyph generation is temporarily unavailable. Please try again later.',
+            code: 'service_unavailable'
+          },
+          { 
+            status: 503,
+            headers: {
+              'Retry-After': '3600', // Suggest retry after 1 hour
+            }
+          }
+        )
+      }
+      
+      // Log other API errors with status/code only
+      console.error('OpenAI API error:', {
+        status: apiError.status,
+        code: apiError.code,
+      })
+    } else {
+      console.error('Glyph generation error:', {
+        type: error?.constructor?.name,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+    
     return NextResponse.json(
       { error: 'Failed to generate glyph' },
       { status: 500 }
