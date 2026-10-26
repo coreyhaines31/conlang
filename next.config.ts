@@ -12,13 +12,13 @@ import { withSentryConfig } from "@sentry/nextjs";
 const devEval = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${devEval} https://cdn.usefathom.com`,
-  "script-src-elem 'self' 'unsafe-inline' https://cdn.usefathom.com",
+  `script-src 'self' 'unsafe-inline'${devEval} https://cdn.usefathom.com https://ingest.getuserproof.com`,
+  "script-src-elem 'self' 'unsafe-inline' https://cdn.usefathom.com https://ingest.getuserproof.com",
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://cdn.usefathom.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://cdn.usefathom.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+  "connect-src 'self' https://cdn.usefathom.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://ingest.getuserproof.com",
   "frame-src 'none'",
   "frame-ancestors 'none'",
   "worker-src 'self' blob:",
