@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import Script from 'next/script'
 import { LanguageEditor } from '@/components/LanguageEditor'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -17,5 +18,17 @@ export default async function Home() {
         .orderBy(desc(languages.updatedAt))
     : []
 
-  return <LanguageEditor initialLanguages={userLanguages} user={user} />
+  return (
+    <>
+      <LanguageEditor initialLanguages={userLanguages} user={user} />
+      {/* UserProof records clicks and page text: anonymous visitors only, never a signed-in user's languages. */}
+      {!user && (
+        <Script
+          src="https://ingest.getuserproof.com/sdk.js"
+          data-site="898e3209-9d3d-41a2-9856-5ca1b3b81fa9"
+          strategy="afterInteractive"
+        />
+      )}
+    </>
+  )
 }
