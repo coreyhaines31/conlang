@@ -61,7 +61,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" style={{ colorScheme: 'light dark' }}>
       <head>
-        <link rel="preconnect" href="https://cdn.usefathom.com" />
         <meta name="theme-color" content="hsl(0 0% 100%)" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="hsl(240 10% 3.9%)" media="(prefers-color-scheme: dark)" />
       </head>
@@ -71,9 +70,8 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Script
-          src="https://cdn.usefathom.com/script.js"
-          data-site="BALMNPTU"
-          defer
+          src="https://tracerkit.com/t.js"
+          data-key="tk_NtbKnd0wNnED-OVf"
           strategy="afterInteractive"
         />
       </body>
