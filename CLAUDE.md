@@ -57,7 +57,7 @@ npm run test:coverage  # Run with coverage
 npm run test:e2e    # Browser tests in tests/*.e2e.ts (starts the dev server if needed)
 ```
 
-E2E tests use [e2e](https://e2e.tester.army/docs) (`e2e.config.ts`). Agent steps call Vercel AI Gateway; `npx e2e guide` prints the skill.
+E2E tests use [e2e](https://e2e.com/docs) (`e2e.config.ts`). Agent steps call Vercel AI Gateway; `npx e2e guide` prints the skill.
 
 ## Database
 
