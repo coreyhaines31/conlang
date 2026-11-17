@@ -89,7 +89,9 @@ Copy `.env.example` to `.env.local` and fill it in:
 | `DATABASE_URL` | Yes | Postgres connection string ([Neon](https://neon.tech) works well) |
 | `BETTER_AUTH_SECRET` | Yes | Session signing secret (`openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | Yes | App URL, `http://localhost:3001` locally |
-| `RESEND_API_KEY` | Yes | Sends magic-link sign-in emails via [Resend](https://resend.com) |
+| `POSTSHIBA_API_KEY` | One of these | Sends magic-link and support emails via [PostShiba](https://postshiba.com). When set, it takes priority over Resend; unset it to roll back |
+| `RESEND_API_KEY` | One of these | Sends magic-link and support emails via [Resend](https://resend.com) when `POSTSHIBA_API_KEY` is unset |
+| `MAIL_FROM_ADDRESS` | No | From address, default `noreply@mail.conlang.app`. With PostShiba it must be on `mail.conlang.app` |
 | `SUPPORT_EMAIL` | Yes | Inbox for the in-app support form |
 | `CRON_SECRET` | No | Protects `/api/cron/keep-alive` |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Client error reporting |
@@ -118,7 +120,7 @@ npx drizzle-kit push
 | Styling | Tailwind CSS v4 |
 | Components | shadcn/ui + Lucide Icons |
 | Database | Neon Postgres + Drizzle ORM |
-| Auth | Better Auth (magic links via Resend) |
+| Auth | Better Auth (magic links via PostShiba, Resend fallback) |
 | AI | Vercel AI Gateway + AI SDK (optional, glyph generation) |
 | Testing | Vitest, [e2e](https://tester.army/e2e) |
 | Hosting | Vercel |

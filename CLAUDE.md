@@ -15,7 +15,7 @@ Development server runs at **http://localhost:3001**
 - TypeScript
 - Tailwind CSS v4
 - Neon Postgres + Drizzle ORM (`@neondatabase/serverless`, `drizzle-orm`)
-- Better Auth (magic-link via Resend)
+- Better Auth (magic-link via PostShiba, Resend fallback)
 - Vercel AI Gateway via AI SDK (optional, for AI glyph generation)
 - Sentry (error tracking, tunnelled at `/monitoring`)
 
@@ -40,7 +40,9 @@ Required in `.env.local`:
 DATABASE_URL=postgres://...neon.tech/...
 BETTER_AUTH_SECRET=...
 BETTER_AUTH_URL=http://localhost:3001
-RESEND_API_KEY=re_...
+POSTSHIBA_API_KEY=...      # sends mail via PostShiba; unset to fall back to Resend
+RESEND_API_KEY=re_...      # fallback provider
+MAIL_FROM_ADDRESS=...      # optional, default noreply@mail.conlang.app
 SUPPORT_EMAIL=...          # inbox for the support form
 CRON_SECRET=...            # for /api/cron/keep-alive
 NEXT_PUBLIC_SENTRY_DSN=... # optional, enables client error reporting
@@ -65,7 +67,7 @@ Uses Neon Postgres with Drizzle ORM. Schema is in `src/lib/db/schema.ts`. Drizzl
 
 ## Auth
 
-Magic-link authentication via Better Auth. The handler is mounted at `/api/auth/[...all]` and emails are sent through Resend from `noreply@mail.conlang.app`.
+Magic-link authentication via Better Auth. The handler is mounted at `/api/auth/[...all]` and emails go through `src/lib/mail.ts` (PostShiba when `POSTSHIBA_API_KEY` is set, otherwise Resend) from `noreply@mail.conlang.app`.
 
 ## Security
 
