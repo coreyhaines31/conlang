@@ -1,11 +1,9 @@
 'use server'
 
-import { Resend } from 'resend'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
-
-const FROM_EMAIL = 'Conlang Support <noreply@mail.conlang.app>'
+import { fromAddress, isMailConfigured, sendMail, type MailAttachment } from '@/lib/mail'
 
 const VALID_TYPES = ['question', 'bug', 'feature'] as const
 type SupportType = (typeof VALID_TYPES)[number]
@@ -19,7 +17,7 @@ const TYPE_LABELS: Record<SupportType, string> = {
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024 // 5 MB
 
 // Conservative RFC-5321-style email pattern. Reject CRLF and other header
-// injection vectors before passing the value to Resend's replyTo.
+// injection vectors before passing the value to the mail provider's reply-to.
 const EMAIL_PATTERN = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/
 
 function isValidEmail(value: string): boolean {
@@ -55,8 +53,8 @@ export async function submitSupportRequest(
     return { success: false, error: 'Subject and message are required.' }
   }
 
-  // Reject malformed guest emails server-side before they hit Resend's
-  // replyTo header. The client uses <input type="email">, but that's a
+  // Reject malformed guest emails server-side before they hit the
+  // reply-to header. The client uses <input type="email">, but that's a
   // hint, not a guarantee.
   const guestEmail =
     guestEmailRaw && isValidEmail(guestEmailRaw) ? guestEmailRaw : null
@@ -82,14 +80,13 @@ export async function submitSupportRequest(
   const verifiedEmail = session?.user?.email ?? null
   const userEmail = verifiedEmail ?? guestEmail
 
-  const apiKey = process.env.RESEND_API_KEY
   const supportEmail = process.env.SUPPORT_EMAIL
-  if (!apiKey || !supportEmail) {
+  if (!isMailConfigured() || !supportEmail) {
     return { success: false, error: 'Email service not configured.' }
   }
 
   // Validate attachment
-  const attachments: Array<{ filename: string; content: Buffer }> = []
+  const attachments: MailAttachment[] = []
   if (imageFile && imageFile.size > 0) {
     if (!imageFile.type.startsWith('image/')) {
       return { success: false, error: 'Only image attachments are supported.' }
@@ -101,10 +98,11 @@ export async function submitSupportRequest(
     attachments.push({
       filename: imageFile.name,
       content: Buffer.from(arrayBuffer),
+      contentType: imageFile.type,
     })
   }
 
-  const resend = new Resend(apiKey)
+  const from = fromAddress('Conlang Support')
   const typeLabel = TYPE_LABELS[type]
   const safeSubject = esc(subject)
   const safeBody = esc(body).replace(/\n/g, '<br>')
@@ -122,8 +120,8 @@ export async function submitSupportRequest(
     </div>
   `
 
-  const { error: supportSendError } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const supportSend = await sendMail({
+    from,
     to: supportEmail,
     replyTo: userEmail ?? supportEmail,
     subject: `[Conlang Support] ${typeLabel}: ${subject}`,
@@ -131,7 +129,8 @@ export async function submitSupportRequest(
     attachments: attachments.length > 0 ? attachments : undefined,
   })
 
-  if (supportSendError) {
+  if (!supportSend.ok) {
+    console.error('[support] send failed', { reason: supportSend.reason })
     return { success: false, error: 'Failed to send message. Please try again.' }
   }
 
@@ -154,16 +153,16 @@ export async function submitSupportRequest(
     `
 
     // Non-fatal: log error but don't fail the whole request
-    const { error: confirmSendError } = await resend.emails.send({
-      from: FROM_EMAIL,
+    const confirmSend = await sendMail({
+      from,
       to: verifiedEmail,
       replyTo: supportEmail,
       subject: `Re: [Conlang Support] ${subject}`,
       html: confirmHtml,
     })
 
-    if (confirmSendError) {
-      console.error('Failed to send confirmation email:', confirmSendError)
+    if (!confirmSend.ok) {
+      console.error('Failed to send confirmation email:', { reason: confirmSend.reason })
     }
   }
 
