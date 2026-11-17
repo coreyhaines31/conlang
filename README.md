@@ -122,7 +122,7 @@ npx drizzle-kit push
 | Database | Neon Postgres + Drizzle ORM |
 | Auth | Better Auth (magic links via PostShiba, Resend fallback) |
 | AI | Vercel AI Gateway + AI SDK (optional, glyph generation) |
-| Testing | Vitest, [e2e](https://tester.army/e2e) |
+| Testing | Vitest, [e2e](https://e2e.com) |
 | Hosting | Vercel |
 
 ---
