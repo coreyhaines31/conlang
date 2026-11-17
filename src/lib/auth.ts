@@ -1,11 +1,9 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { magicLink } from 'better-auth/plugins'
-import { Resend } from 'resend'
+import { fromAddress, sendMail } from './mail'
 import { db } from './db'
 import { user, session, account, verification } from './db/schema'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -15,8 +13,8 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        await resend.emails.send({
-          from: 'Conlang <noreply@mail.conlang.app>',
+        const result = await sendMail({
+          from: fromAddress('Conlang'),
           to: email,
           subject: 'Sign in to Conlang',
           html: `
@@ -28,6 +26,10 @@ export const auth = betterAuth({
             </div>
           `,
         })
+        if (!result.ok) {
+          console.error('[auth] magic link send failed', { reason: result.reason })
+          throw new Error('Failed to send sign-in email')
+        }
       },
     }),
   ],
